@@ -1,0 +1,10 @@
+- Do not plug in the modem without the antenna attached
+- Modem operates at 2.4 GHz
+- Modem settings
+	- COM1
+	- 9600 bps
+	- 8 data bits
+	- No parity
+	- 1 stop bit
+	- Hardware
+

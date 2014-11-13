@@ -1,0 +1,6 @@
+http://www.barrgroup.com/Embedded-Systems/How-To/CRC-Calculation-C-Code
+
+Byte-by-Byte is best, take the code and give credit.
+
+What is our generator? We need to decide as a class.
+
