@@ -1,0 +1,21 @@
+- basic GUI
+- thread creation
+- packet creation
+- data extraction from packet
+- setting CRC
+- checking CRC
+- packet validation
+- starting enquiries
+- receiving an enquiry
+- calculate timeouts
+- complex GUI features
+- comm port setup
+- user guide
+- sending a control character
+- sending data
+- reset timeouts
+- displaying data to the screen
+- protocol data collection
+- technical report
+- testing and refinement
+- project compilation and completion
