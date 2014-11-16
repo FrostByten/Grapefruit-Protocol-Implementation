@@ -1,0 +1,14 @@
+#include "Menu.h"
+
+MENU MENU
+{
+	POPUP "&File"
+	{
+		MENUITEM "&Help", IDM_HELP
+		MENUITEM "&Quit", IDM_QUIT
+	}
+	POPUP "&Send"
+	{
+		MENUITEM "&Send Text File", IDM_SENDTEXTFILE
+	}
+}
