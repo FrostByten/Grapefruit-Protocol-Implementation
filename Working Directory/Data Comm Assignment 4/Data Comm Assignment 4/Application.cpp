@@ -3,24 +3,23 @@
 
 #define CONNECT_ON_START
 
+#pragma warning (disable: 4096)
+
 #include <windows.h>
 #include <stdio.h>
 #include "Menu.h"
-#include "Application.h"
-
-HANDLE hComm;
-DCB dcb;
-HMENU hMenu;
-HWND hwnd;
-WNDCLASSEX Wcl;
-HANDLE hThread;
+#include "Application.h";
 
 char Name[] = "Irregardless Peer-to-Peer via Grapefruit";
 char printText[255];	//output buffer
 int X = 0, Y = 0; // Current coordinates
 
-#pragma warning (disable: 4096)
-
+HANDLE hThrd;
+HANDLE hComm;
+DCB dcb;
+HMENU hMenu;
+HWND hwnd;
+WNDCLASSEX Wcl;
 
 int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
  						  LPSTR lspszCmdParam, int nCmdShow)
@@ -28,15 +27,24 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 	BuildCommDCB(TEXT("96,N,8,1"), &dcb);
 
 	#ifdef CONNECT_ON_START
-	if ((hComm = CreateFile(TEXT("COM1"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 
-		FILE_FLAG_OVERLAPPED, NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
-	{
-		MessageBox(NULL, TEXT("Error connecting to modem, exiting..."), TEXT("Error"), MB_OK);
-		PurgeComm(hComm, PURGE_RXCLEAR | PURGE_TXCLEAR);
-		CloseHandle(hComm);
-		hComm = NULL;
-		PostQuitMessage(0);
-	}
+		if ((hComm = CreateFile(TEXT("COM1"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 
+			FILE_FLAG_OVERLAPPED, NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
+		{
+			MessageBox(NULL, TEXT("Error connecting to modem, exiting..."), TEXT("Error"), MB_OK);
+			PurgeComm(hComm, PURGE_RXCLEAR | PURGE_TXCLEAR);
+			CloseHandle(hComm);
+			hComm = NULL;
+			PostQuitMessage(0);
+		}
+
+		hThrd = CreateThread(NULL, 0, startComms, NULL, 0, NULL);
+		if (!hThrd)
+		{
+			MessageBox(NULL, TEXT("Error creating communications thread."), TEXT("Error"), MB_ICONWARNING | MB_OK);
+			CloseHandle(hThrd);
+			hThrd = NULL;
+			PostQuitMessage(0);
+		}
 	#endif
 
 	MSG Msg;
@@ -151,4 +159,28 @@ void clearString(char* str)
 	Y = 0;
 
 	return;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: clearString
+--
+-- DATE: November 17, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: DWORD WINAPI startComms(LPVOID data)
+--
+-- RETURNS: DWORD status. The return status of the thread
+--
+-- NOTES:
+-- This thread will begin the idle loop of the Grapefruit protocol and begin waiting for an ENQ
+----------------------------------------------------------------------------------------------------------------------*/
+DWORD WINAPI startComms(LPVOID data)
+{
+	MessageBox(NULL, TEXT("Thread created successfully."), TEXT("Error"), MB_ICONWARNING | MB_OK);
+	return 0;
 }
