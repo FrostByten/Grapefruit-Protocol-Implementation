@@ -1,0 +1,3 @@
+#define IDM_HELP			100
+#define IDM_QUIT			101
+#define IDM_SENDTEXTFILE	102

@@ -1,0 +1,33 @@
+HANDLE hComm;
+DCB dcb;
+
+BuildCommDCB(TEXT("96,N,8,1"), &dcb);
+
+if ((hComm = CreateFile(TEXT("COM1"),
+		GENERIC_READ | GENERIC_WRITE, 0,
+		NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED,
+		NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
+{
+	MessageBox(NULL, TEXT("Error connecting to modem, exiting..."), TEXT("Error"), MB_OK);
+	PurgeComm(hComm, PURGE_RXCLEAR | PURGE_TXCLEAR);
+	CloseHandle(hComm);
+	hComm = NULL;
+	PostQuitMessage(0);
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+static int TX_SUC, RX_SUC, TX_MISS, RX_MISS, VALID_FAIL, 
+			DATA_SENT, DATA_RCVD, ACK_SENT, ACK_RCVD, 
+			NAK_SEND, NAK_RCVD = 0;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+HANDLE hThrd = CreateThread(NULL, 0, functocall, (LPVOID)data, 0, &threadId);
+if(!hThrd)
+{
+	MessageBox(NULL, TEXT("Error creating thread."), TEXT("Error"), MB_ICONWARNING | MB_OK);
+	hThrd = NULL;
+	PostQuitMessage(0);
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
