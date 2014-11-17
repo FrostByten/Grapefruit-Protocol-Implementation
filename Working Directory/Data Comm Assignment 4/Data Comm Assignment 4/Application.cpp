@@ -1,23 +1,23 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
+#define CONNECT_ON_START
+
 #include <windows.h>
 #include <stdio.h>
 #include "Menu.h"
 #include "Application.h"
 
-LPTSTR lpszCommName = TEXT("com1");
-COMMCONFIG cc;
 HANDLE hComm;
+DCB dcb;
 HMENU hMenu;
 HWND hwnd;
 WNDCLASSEX Wcl;
 HANDLE hThread;
 
-char Name[] = "Grapefruit Peer-to-Peer";
+char Name[] = "Irregardless Peer-to-Peer via Grapefruit";
 char printText[255];	//output buffer
 int X = 0, Y = 0; // Current coordinates
-bool connected = false;
 
 #pragma warning (disable: 4096)
 
@@ -25,6 +25,20 @@ bool connected = false;
 int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
  						  LPSTR lspszCmdParam, int nCmdShow)
 {
+	BuildCommDCB(TEXT("96,N,8,1"), &dcb);
+
+	#ifdef CONNECT_ON_START
+	if ((hComm = CreateFile(TEXT("COM1"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 
+		FILE_FLAG_OVERLAPPED, NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
+	{
+		MessageBox(NULL, TEXT("Error connecting to modem, exiting..."), TEXT("Error"), MB_OK);
+		PurgeComm(hComm, PURGE_RXCLEAR | PURGE_TXCLEAR);
+		CloseHandle(hComm);
+		hComm = NULL;
+		PostQuitMessage(0);
+	}
+	#endif
+
 	MSG Msg;
 
 	Wcl.cbSize = sizeof (WNDCLASSEX);
