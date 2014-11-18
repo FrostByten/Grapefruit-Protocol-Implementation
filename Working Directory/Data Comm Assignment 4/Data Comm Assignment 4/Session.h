@@ -1,0 +1,1 @@
+void calculateTimeouts( Timeouts* timeouts );

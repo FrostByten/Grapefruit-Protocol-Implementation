@@ -1,7 +1,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-#define CONNECT_ON_START
+//#define CONNECT_ON_START
 
 #pragma warning (disable: 4096)
 
@@ -9,10 +9,14 @@
 #include <stdio.h>
 #include "Menu.h"
 #include "Application.h"
+#include "Session.h"
 
 char Name[] = "Irregardless Peer-to-Peer via Grapefruit";
 char printText[255];	//output buffer
 int X = 0, Y = 0; // Current coordinates
+
+// Timeouts
+Timeouts timeouts;
 
 HANDLE hThrd;
 HANDLE hComm;
@@ -37,6 +41,9 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 			hComm = NULL;
 			PostQuitMessage(0);
 		}
+
+		// Calculate timeouts
+		calculateTimeouts( &timeouts );
 
 		ol.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 		hThrd = CreateThread(NULL, 0, startComms, NULL, 0, NULL);
