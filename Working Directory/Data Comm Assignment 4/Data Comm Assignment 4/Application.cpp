@@ -8,7 +8,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include "Menu.h"
-#include "Application.h";
+#include "Application.h"
 
 char Name[] = "Irregardless Peer-to-Peer via Grapefruit";
 char printText[255];	//output buffer
@@ -20,6 +20,7 @@ DCB dcb;
 HMENU hMenu;
 HWND hwnd;
 WNDCLASSEX Wcl;
+OVERLAPPED ol = { 0 };
 
 int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
  						  LPSTR lspszCmdParam, int nCmdShow)
@@ -37,6 +38,7 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 			PostQuitMessage(0);
 		}
 
+		ol.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 		hThrd = CreateThread(NULL, 0, startComms, NULL, 0, NULL);
 		if (!hThrd)
 		{
@@ -110,6 +112,8 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			
 		case WM_CHAR:
 			// TODO: Add a character to the send buffer
+			//char chr = static_cast<char>(wParam);
+			WriteFile(hComm, &wParam, 1, NULL, &ol);
 			break;
 
 		case WM_PAINT:		// Process a repaint message
@@ -162,7 +166,7 @@ void clearString(char* str)
 }
 
 /*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: clearString
+-- FUNCTION: startComms
 --
 -- DATE: November 17, 2014
 --
@@ -182,5 +186,30 @@ void clearString(char* str)
 DWORD WINAPI startComms(LPVOID data)
 {
 	MessageBox(NULL, TEXT("Thread created successfully."), TEXT("Error"), MB_ICONWARNING | MB_OK);
+
+	DWORD read;
+	char recieved;
+
+	for (;;)
+	{
+		if (ReadFile(hComm, &recieved, 1, &read, &ol))
+		{
+			char disp[2] = { recieved, '\0' };
+			if (read)
+				MessageBox(NULL, disp, TEXT("Such wow!"), MB_OK);
+		}
+		else
+		{
+			DWORD err = GetLastError();
+			if (err == 0x3e5)
+			{
+				DWORD trans;
+				GetOverlappedResult(hComm, &ol, &trans, TRUE);
+				if (trans)
+					MessageBox(NULL, TEXT("Recieved characer!"), TEXT("Such wow!"), MB_OK);
+			}
+		}
+	}
+
 	return 0;
 }
