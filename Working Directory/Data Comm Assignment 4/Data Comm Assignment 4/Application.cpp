@@ -1,3 +1,31 @@
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: Application.cpp -
+--
+-- PROGRAM: Irregardless
+--
+-- FUNCTIONS:
+--		int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
+--					  LPSTR lspszCmdParam, int nCmdShow);
+--		LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
+--					WPARAM wParam, LPARAM lParam);
+--		void clearString(char*);
+--		void printDebugString(char* str);
+--		
+--
+-- DATE: November 15, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--			 Lewis Scott
+--
+-- PROGRAMMER: Christofer Klassen
+--			   Lewis Scott
+--
+-- NOTES:
+--
+----------------------------------------------------------------------------------------------------------------------*/
+
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -30,6 +58,29 @@ HWND hwnd;
 WNDCLASSEX Wcl;
 OVERLAPPED ol = { 0 };
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: WinMain
+--
+-- DATE: November 17, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--			 Lewis Scott
+--
+-- PROGRAMMER: Christofer Klassen
+--			   Lewis Scott
+--
+-- INTERFACE: int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
+--					  LPSTR lspszCmdParam, int nCmdShow);
+--
+-- RETURNS: int - the execution code of the program
+--
+-- NOTES:
+-- This function is the main function of the program. It establishes a link
+-- to the communications port and initializes protocol variables, as well as
+-- starting the WndProc message loop.
+----------------------------------------------------------------------------------------------------------------------*/
 int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
  						  LPSTR lspszCmdParam, int nCmdShow)
 {
@@ -106,6 +157,28 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 	return Msg.wParam;
 }
 
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: WndProc
+--
+-- DATE: November 17, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--			 Lewis Scott
+--
+-- PROGRAMMER: Christofer Klassen
+--			   Lewis Scott
+--
+-- INTERFACE: LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
+--					WPARAM wParam, LPARAM lParam);
+--
+-- RETURNS: LRESULT
+--
+-- NOTES:
+-- This function handles all messages received by the program.
+----------------------------------------------------------------------------------------------------------------------*/
 LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
                           WPARAM wParam, LPARAM lParam)
 {
@@ -184,6 +257,25 @@ void clearString(char* str)
 	return;
 }
 
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: printDebugString
+--
+-- DATE: November 19, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--
+-- PROGRAMMER: Christofer Klassen
+--
+-- INTERFACE: void printDebugString(char* str);
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function displays a Message Box with a certain string.
+----------------------------------------------------------------------------------------------------------------------*/
 void printDebugString(char* str)
 {
 	MessageBox(NULL, str, "Testing", MB_OK);

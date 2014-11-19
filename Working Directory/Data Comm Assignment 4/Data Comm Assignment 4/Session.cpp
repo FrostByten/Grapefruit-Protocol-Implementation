@@ -1,3 +1,24 @@
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: Session.cpp - 
+--
+-- PROGRAM: Irregardless
+--
+-- FUNCTIONS:
+--		void calculateTimeouts( Timeouts* timeouts);
+--		double getResetTime( Timeouts* timeouts );
+-- 
+-- DATE: November 17, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--
+-- PROGRAMMER: Christofer Klassen
+--
+-- NOTES:
+-- 
+----------------------------------------------------------------------------------------------------------------------*/
+
 #include <windows.h>
 #include "Application.h"
 #include "Session.h"
