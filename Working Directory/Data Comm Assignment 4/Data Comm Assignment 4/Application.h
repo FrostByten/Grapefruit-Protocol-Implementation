@@ -1,6 +1,9 @@
 #include <string>
 #include <sstream>
+#include <cstdlib>
+#include <time.h>
 
+using std::srand;
 using std::string;
 using std::stringstream;
 
