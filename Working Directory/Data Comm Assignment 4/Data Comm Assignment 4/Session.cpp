@@ -1,12 +1,13 @@
 #include <windows.h>
 #include "Application.h"
+#include "Session.h"
 
 void calculateTimeouts( Timeouts* timeouts) {
-	// TODO: these are calculated in seconds. How do we convert this to iterations so that
-	// they are comparable?
-	timeouts->timeoutSendEnq = ( 5 * 8 ) /  ( 9600 / 8 );
-	timeouts->timeoutSendPacket = ( 1200 * 8 ) / ( 9600 / 8 );
-	timeouts->timeoutSendAck = timeouts->timeoutSendPacket * 3;
+	// Calculate each timeout in milliseconds so that they are compatible with
+	// the WaitForSingleObject function
+	timeouts->timeoutSendEnq = ( double(ENQ_TIMEOUT_SIZE) * BYTE_SIZE ) /  ( BIT_RATE / BYTE_SIZE ) / 100;
+	timeouts->timeoutSendPacket = ( double(PACKET_TIMEOUT_SIZE) * BYTE_SIZE ) / ( BIT_RATE / BYTE_SIZE ) / 100;
+	timeouts->timeoutSendAck = timeouts->timeoutSendPacket * MAX_MISS;
 
 	return;
 }

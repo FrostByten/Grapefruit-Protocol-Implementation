@@ -1,4 +1,11 @@
+#include <string>
+#include <sstream>
+
+using std::string;
+using std::stringstream;
+
 void clearString(char* str);
+void printDebugString(char* str);
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
 DWORD WINAPI startComms(LPVOID data);
 

@@ -42,9 +42,6 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 			PostQuitMessage(0);
 		}
 
-		// Calculate timeouts
-		calculateTimeouts( &timeouts );
-
 		ol.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 		hThrd = CreateThread(NULL, 0, startComms, NULL, 0, NULL);
 		if (!hThrd)
@@ -55,6 +52,9 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 			PostQuitMessage(0);
 		}
 	#endif
+
+	// Calculate timeouts
+	calculateTimeouts(&timeouts);
 
 	MSG Msg;
 
@@ -219,4 +219,10 @@ DWORD WINAPI startComms(LPVOID data)
 	}
 
 	return 0;
+}
+
+void printDebugString(char* str)
+{
+	MessageBox(NULL, str, "Testing", MB_OK);
+	return;
 }
