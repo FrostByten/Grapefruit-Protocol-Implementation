@@ -13,7 +13,6 @@ using std::stringstream;
 void clearString(char* str);
 void printDebugString(char* str);
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
-DWORD WINAPI startComms(LPVOID data);
 
 typedef struct Timeouts Timeouts;
 struct Timeouts {

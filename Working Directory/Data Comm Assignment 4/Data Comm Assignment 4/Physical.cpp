@@ -26,6 +26,7 @@ DWORD WINAPI startComms(LPVOID data)
 	
 	for(;;)
 	{
+		read = 0;
 		WaitCommEvent(hComm, &eventmask, &ol);
 
 		if (ReadFile(hComm, &recieved, 1, &read, &ol))
@@ -39,10 +40,9 @@ DWORD WINAPI startComms(LPVOID data)
 			DWORD err = GetLastError();
 			if (err == 0x3e5)
 			{
-				DWORD trans;
-				GetOverlappedResult(hComm, &ol, &trans, TRUE);
+				GetOverlappedResult(hComm, &ol, &read, TRUE);
 				char disp[2] = { recieved, '\0' };
-				if (trans && read)
+				if (read)
 					MessageBox(NULL, disp, TEXT("Such wow!"), MB_OK);
 			}
 		}

@@ -1,7 +1,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-//#define CONNECT_ON_START
+#define CONNECT_ON_START
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
@@ -106,7 +106,6 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 	return Msg.wParam;
 }
 
-
 LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
                           WPARAM wParam, LPARAM lParam)
 {
@@ -133,7 +132,8 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			
 		case WM_CHAR:
 			// TODO: Add a character to the send buffer
-			WriteFile(hComm, &wParam, 1, NULL, &ol);
+			if(wParam >= 0x20 && wParam <= 0x7E) 
+				WriteFile(hComm, &wParam, 1, NULL, &ol);
 			break;
 
 		case WM_PAINT:		// Process a repaint message
@@ -151,7 +151,6 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 	}
 	return 0;
 }
-
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: clearString
@@ -183,57 +182,6 @@ void clearString(char* str)
 	Y = 0;
 
 	return;
-}
-
-/*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: startComms
---
--- DATE: November 17, 2014
---
--- REVISIONS: (Date and Description)
---
--- DESIGNER: Lewis Scott
---
--- PROGRAMMER: Lewis Scott
---
--- INTERFACE: DWORD WINAPI startComms(LPVOID data)
---
--- RETURNS: DWORD status. The return status of the thread
---
--- NOTES:
--- This thread will begin the idle loop of the Grapefruit protocol and begin waiting for an ENQ
-----------------------------------------------------------------------------------------------------------------------*/
-DWORD WINAPI startComms(LPVOID data)
-{
-	DWORD read;
-	char recieved;
-	DWORD eventmask = EV_RXCHAR;
-	
-	for(;;)
-	{
-		WaitCommEvent(hComm, &eventmask, &ol);
-
-		if (ReadFile(hComm, &recieved, 1, &read, &ol))
-		{
-			char disp[2] = { recieved, '\0' };
-			if (read)
-				MessageBox(NULL, disp, TEXT("Such wow!"), MB_OK);
-		}
-		else
-		{
-			DWORD err = GetLastError();
-			if (err == 0x3e5)
-			{
-				DWORD trans;
-				GetOverlappedResult(hComm, &ol, &trans, TRUE);
-				char disp[2] = { recieved, '\0' };
-				if (trans && read)
-					MessageBox(NULL, disp, TEXT("Such wow!"), MB_OK);
-			}
-		}
-	}
-
-	return 0;
 }
 
 void printDebugString(char* str)
