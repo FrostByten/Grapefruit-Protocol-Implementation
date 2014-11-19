@@ -3,6 +3,9 @@
 #include <cstdlib>
 #include <time.h>
 
+#ifndef _IRREGARDLESS
+#define _IRREGARDLESS
+
 using std::srand;
 using std::string;
 using std::stringstream;
@@ -21,3 +24,5 @@ struct Timeouts {
 	int resetMin;
 	int resetMax;
 };
+
+#endif

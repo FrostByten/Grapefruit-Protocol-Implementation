@@ -5,12 +5,15 @@
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
+#pragma warning (disable: 4018)
+#pragma warning (disable: 4244)
 
 #include <windows.h>
 #include <stdio.h>
 #include "Menu.h"
 #include "Application.h"
 #include "Session.h"
+#include "Physical.h"
 
 char Name[] = "Irregardless Peer-to-Peer via Grapefruit";
 char printText[255];	//output buffer

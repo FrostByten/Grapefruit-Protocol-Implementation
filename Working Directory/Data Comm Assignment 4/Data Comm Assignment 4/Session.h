@@ -1,4 +1,8 @@
+#ifndef _SESSION
+#define _SESSION
+
 #include <cstdlib>
+#include "Application.h"
 
 using std::rand;
 
@@ -13,3 +17,5 @@ static const int MILLISECONDS = 1000;
 
 void calculateTimeouts( Timeouts* timeouts );
 double getResetTime( Timeouts* timeouts );
+
+#endif
