@@ -119,7 +119,6 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			
 		case WM_CHAR:
 			// TODO: Add a character to the send buffer
-			//char chr = static_cast<char>(wParam);
 			WriteFile(hComm, &wParam, 1, NULL, &ol);
 			break;
 
@@ -192,13 +191,14 @@ void clearString(char* str)
 ----------------------------------------------------------------------------------------------------------------------*/
 DWORD WINAPI startComms(LPVOID data)
 {
-	MessageBox(NULL, TEXT("Thread created successfully."), TEXT("Error"), MB_ICONWARNING | MB_OK);
-
 	DWORD read;
 	char recieved;
-
-	for (;;)
+	DWORD eventmask = EV_RXCHAR;
+	
+	for(;;)
 	{
+		WaitCommEvent(hComm, &eventmask, &ol);
+
 		if (ReadFile(hComm, &recieved, 1, &read, &ol))
 		{
 			char disp[2] = { recieved, '\0' };
@@ -212,8 +212,9 @@ DWORD WINAPI startComms(LPVOID data)
 			{
 				DWORD trans;
 				GetOverlappedResult(hComm, &ol, &trans, TRUE);
-				if (trans)
-					MessageBox(NULL, TEXT("Recieved characer!"), TEXT("Such wow!"), MB_OK);
+				char disp[2] = { recieved, '\0' };
+				if (trans && read)
+					MessageBox(NULL, disp, TEXT("Such wow!"), MB_OK);
 			}
 		}
 	}
