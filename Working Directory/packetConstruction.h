@@ -8,7 +8,8 @@
 std::string buffer;
 unsigned char syncSend;
 
-#define MAX_DATA 1018
+
+const size_t MAX_DATA = 1018;
 #define MAX_SENDS 5
 
 const unsigned char ENQ = 0x05;
@@ -73,6 +74,40 @@ void constructPacket( unsigned char* packet, size_t maxSends )
 	
 	syncSend = ( syncSend == DC2 ) ? DC3 : DC2;
 	//setCRC( packet );
+}
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: trimResponse
+--
+-- DATE: November 18, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Jeff Bayntun, Chris Klassen, Thomas Tallentire, Lewis Scott
+--
+-- PROGRAMMER: Jeff Bayntun
+--
+-- INTERFACE: string constructPacket( unsigned char* response ) 
+--			This function takes a Grapefruit Protocol packet.  This packet is assumed to be pre-validated, meaning
+--			that it has passed CRC validation has been confirmed to have the correct EOT or ETB prefix, and has the
+--			appropriate sync byte in as its second character.  It returns a string made up of the data in the packet,
+--			either to ETX, or the full 1018 bytes of data.
+-- RETURNS: string containing all data in the packet.
+--
+-- NOTES:
+----------------------------------------------------------------------------------------------------------------------*/
+std::string trimResponse( unsigned char* response )
+{
+	std::string data;
+	data.reserve(MAX_DATA);
+	
+	data = "";
+	for( size_t i = 2; response[i] != ETX && i < MAX_DATA; i++)
+	{
+		data += response[i];
+	}
+	data.shrink_to_fit();
+
+	return data;
 }
 
 void readPacket( unsigned char* packet )
