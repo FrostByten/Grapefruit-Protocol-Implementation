@@ -24,6 +24,9 @@
     <ClCompile Include="Physical.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Statistics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">

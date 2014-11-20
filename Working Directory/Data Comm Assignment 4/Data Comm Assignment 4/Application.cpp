@@ -29,7 +29,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-#define CONNECT_ON_START
+//#define CONNECT_ON_START
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
@@ -114,12 +114,6 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	// Calculate timeouts
 	calculateTimeouts(&timeouts);
-
-	stringstream test;
-	test << "Random Timeout 1: " << getResetTime(&timeouts) << ", ";
-	test << "Random Timeout 2: " << getResetTime(&timeouts) << ", ";
-	test << "Random Timeout 3: " << getResetTime(&timeouts) << ", ";
-	printDebugString((char*) test.str().c_str());
 
 	MSG Msg;
 

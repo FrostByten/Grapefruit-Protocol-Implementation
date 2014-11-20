@@ -65,6 +65,7 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Physical.cpp" />
     <ClCompile Include="Session.cpp" />
+    <ClCompile Include="Statistics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
