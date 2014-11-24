@@ -21,8 +21,12 @@ extern OVERLAPPED ol;
 extern Timeouts timeouts;
 
 DWORD WINAPI startComms(LPVOID data);
+DWORD WINAPI readComms(LPVOID data);
 BOOL sendPacket(unsigned char* packet);
 BOOL receivePacket(unsigned char* packet);
 BOOL sendControlChar(char cChar);
+void waitForEnqResponse();
+void sendData();
+
 
 #endif

@@ -20,6 +20,10 @@
 
 #include "Physical.h"
 
+char sendSync;
+bool sending = false;
+bool receiving = false;
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: startComms
 --
@@ -37,38 +41,114 @@
 --
 -- NOTES:
 -- This thread will begin the idle loop of the Grapefruit protocol and begin waiting for an ENQ
+-- and checking the buffer for data.
 ----------------------------------------------------------------------------------------------------------------------*/
 DWORD WINAPI startComms(LPVOID data)
 {
-	DWORD read;
-	char recieved;
-	DWORD eventmask = EV_RXCHAR;
-	
+	HANDLE hRxThrd;
+	hRxThrd = CreateThread(NULL, 0, startRx, NULL, 0, NULL);
+	if (!hRxThrd)
+	{
+		MessageBox(NULL, TEXT("Error creating Rx thread."), TEXT("Error"), MB_ICONWARNING | MB_OK);
+		CloseHandle(hRxThrd);
+		hRxThrd = NULL;
+		PostQuitMessage(0);
+	}
+
 	for(;;)
 	{
-		read = 0;
-		WaitCommEvent(hComm, &eventmask, &ol);
-
-		if (ReadFile(hComm, &recieved, 1, &read, &ol))
+		if(!receiving)
 		{
-			char disp[2] = { recieved, '\0' };
-			if (read)
-				MessageBox(NULL, disp, TEXT("Such wow!"), MB_OK);
-		}
-		else
-		{
-			DWORD err = GetLastError();
-			if (err == 0x3e5)
+			if(isBufferNotEmpty() && isResetTimerUp())
 			{
-				GetOverlappedResult(hComm, &ol, &read, TRUE);
-				char disp[2] = { recieved, '\0' };
-				if (read)
-					MessageBox(NULL, disp, TEXT("Such wow!"), MB_OK);
+				sending = true;
+				sendSync = SYN1;
+
+				sendControlChar(ENQ);
+				waitForEnqResponse();
 			}
 		}
 	}
 
 	return 0;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: waitForEnqResponse
+--
+-- DATE: November 24, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: void waitForEnqResponse(void)
+--
+-- RETURNS: void.
+--
+-- NOTES:
+-- Waits for a response from the receiving end and posts the buffer data if it receives one.
+----------------------------------------------------------------------------------------------------------------------*/
+void waitForEnqResponse()
+{
+	if(waitForControlChar(ACK))
+	{
+		sendData();
+	}
+
+	sending = false;
+	setTimer(getResetTime(&timeouts));
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendData
+--
+-- DATE: November 24, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: void sendData(void)
+--
+-- RETURNS: void.
+--
+-- NOTES:
+-- Keeps trying to send until the maximum number of misses or sends have been hit, or the buffer is empty.
+----------------------------------------------------------------------------------------------------------------------*/
+void sendData()
+{
+	int misses = 0;
+	int sent = 0;
+
+	unsigned char packet[1024];
+
+	while(isBufferNotEmpty() && misses < MAX_MISS && sent < MAX_SEND)
+	{
+		constructPacket(packet, MAX_SEND);
+		int dataSize = min(buffersize, 1018);
+		sendPacket(packet);
+		char response = receiveControlChar();
+		if(response == ACK)
+		{
+			Statistics.incACKReceived();
+			Statistics.incGoodPacketSent();
+			sent++;
+			sendSync = (sendSync==SYN1)?SYN2:SYN1;
+			popFromBuffer(dataSize);
+		}
+		else
+		{
+			misses++;
+			Statistics.incNAKReceived();
+			Statistics.incLostPacketSent();
+		}
+	}
+	
 }
 
 /*------------------------------------------------------------------------------------------------------------------
