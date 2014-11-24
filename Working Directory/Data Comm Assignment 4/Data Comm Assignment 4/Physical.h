@@ -14,10 +14,15 @@
 #define ACK 0x06
 #define NAK 0x15
 
+#define PACKET_SIZE 1024
+
 extern HANDLE hComm;
 extern OVERLAPPED ol;
 extern Timeouts timeouts;
 
 DWORD WINAPI startComms(LPVOID data);
+BOOL sendPacket(unsigned char* packet);
+BOOL receivePacket(unsigned char* packet);
+BOOL sendControlChar(char cChar);
 
 #endif

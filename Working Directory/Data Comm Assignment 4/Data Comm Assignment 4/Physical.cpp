@@ -70,3 +70,96 @@ DWORD WINAPI startComms(LPVOID data)
 
 	return 0;
 }
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendPacket
+--
+-- DATE: November 18, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Thomas Tallentire
+--
+-- PROGRAMMER: Thomas Tallentire
+--
+-- INTERFACE: BOOL sendPacket(unsigned char* packet)
+--
+-- RETURNS: BOOl, whether or not the packet was sent properly.
+--
+-- NOTES:
+-- The function sends a given packet over the comm port.
+----------------------------------------------------------------------------------------------------------------------*/
+BOOL sendPacket(unsigned char* packet)
+{
+	return (WriteFile(hComm, &packet, PACKET_SIZE, NULL, &ol));
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: receivePacket
+--
+-- DATE: November 18, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Thomas Tallentire
+--
+-- PROGRAMMER: Thomas Tallentire
+--
+-- INTERFACE: BOOL receivePacket(unsigned char* packet)
+--
+-- RETURNS: BOOl, whether or not the packet was received properly.
+--
+-- NOTES:
+-- The function waits for a packet of size defined by the PACKET_SIZE 
+-- constant.
+----------------------------------------------------------------------------------------------------------------------*/
+BOOL receivePacket(unsigned char* packet)
+{
+	DWORD dwEvent;
+	HANDLE hData = packet;
+	BOOL ret;
+
+	dwEvent = WaitForMultipleObjects(PACKET_SIZE, &hData, FALSE, timeouts.timeoutSendAck);
+
+	switch(dwEvent)
+	{
+		case (WAIT_OBJECT_0 + PACKET_SIZE) :
+			ret = TRUE;
+			break;
+		case (WAIT_ABANDONED_0 + 1) :
+			ret = FALSE;
+			break;
+		case (WAIT_TIMEOUT) :
+			ret = FALSE;
+			break;
+		case (WAIT_FAILED) :
+			ret = FALSE;
+			break;
+		default:
+			printf("Wait error: %d\n", GetLastError()); 
+	}
+	return ret;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendControlChar
+--
+-- DATE: November 18, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Thomas Tallentire
+--
+-- PROGRAMMER: Thomas Tallentire
+--
+-- INTERFACE: BOOL sendControlChar(char cChar)
+--
+-- RETURNS: BOOl, whether or not the control character was sent properly.
+--
+-- NOTES:
+-- The function attempts to send a control character over the comm port.
+----------------------------------------------------------------------------------------------------------------------*/
+BOOL sendControlChar(char cChar)
+{
+	return (WriteFile(hComm, &cChar, 1, NULL, &ol));
+}
