@@ -4,6 +4,8 @@
 #include <string>
 #include <iostream>
 
+#include "crc.h"
+
 
 std::string buffer;
 unsigned char syncSend;
@@ -11,6 +13,7 @@ unsigned char syncSend;
 
 const size_t MAX_DATA = 1018;
 #define MAX_SENDS 5
+
 
 const unsigned char ENQ = 0x05;
 const unsigned char ACK = 0x06;
@@ -22,9 +25,22 @@ const unsigned char DC1 = 0x11;
 const unsigned char DC2 = 0x12;  // syncSend
 const unsigned char DC3 = 0x13;  // syncSend
 
+void printThis( unsigned char* packet, size_t f )
+{
+	for(size_t i = 0; i < f; i++)
+	{
+		std::cout << packet[i];
+	}
+	std::cout << std::endl << std::endl << "+=+=+=+=+=+=+=+=+=+=" << std::endl << std::endl;
+}
+
+
+
 void constructPacket( unsigned char* packet, size_t maxSends ); 
 void readPacket( unsigned char* packet );
 void printchar( unsigned char c );
+void setCRC( unsigned char* packet );
+std::string trimResponse( unsigned char* response );
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: construcPacket
@@ -47,33 +63,54 @@ void printchar( unsigned char c );
 ----------------------------------------------------------------------------------------------------------------------*/
 void constructPacket( unsigned char* packet, size_t maxSends ) 
 {
-	if( buffer.size() > MAX_DATA && maxSends != MAX_SENDS  )
+	//should check this at a higher level, so they know
+	if( maxSends >= MAX_SENDS )
+		return;
+		
+	if( buffer.size() > MAX_DATA )
 	{
 		packet[0] = ETB;
 		packet[1] = syncSend;
 		
-		
-		for( size_t i = 0; i < MAX_DATA - 1; i++ )
+		for( size_t i = 0; i < MAX_DATA; i++ )
 		{
-			packet[i + 2] = buffer[i];
+			packet[i + 2] = (unsigned char)buffer[i];
 		}
 	}
 	else
 	{
 		packet[0] = EOT;
 		packet[1] = syncSend;
-		for( size_t i = 0; i < buffer.size(); i++ )
+		size_t i = 0;
+		for(; i < buffer.size(); i++ )
 		{
 			packet[i + 2] = buffer[i];
 		}
-		for( size_t i = buffer.size(); i < MAX_DATA - 1; i++)
+		for(; i < MAX_DATA; i++)
 		{
 			packet[i + 2] = ETX;
 		}
 	}
 	
 	syncSend = ( syncSend == DC2 ) ? DC3 : DC2;
-	//setCRC( packet );
+	setCRC( packet );
+	
+	return;
+}
+
+void setCRC( unsigned char* packet )
+{
+	crc c = crcFast( &packet[2], MAX_DATA );
+	
+	unsigned char* crcArray = new unsigned char[4];
+	crcArray = reinterpret_cast<unsigned char *>(&c);	
+
+	for(size_t i = 0; i < 4; i++)
+	{
+		packet[ MAX_DATA + 2 + i ] = crcArray[i];
+	}
+
+	return;
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: trimResponse
@@ -95,19 +132,27 @@ void constructPacket( unsigned char* packet, size_t maxSends )
 --
 -- NOTES:
 ----------------------------------------------------------------------------------------------------------------------*/
+
 std::string trimResponse( unsigned char* response )
 {
 	std::string data;
 	data.reserve(MAX_DATA);
 	
 	data = "";
-	for( size_t i = 2; response[i] != ETX && i < MAX_DATA; i++)
+	for( size_t i = 2; response[i] != ETX && i < MAX_DATA + 2; i++)
 	{
 		data += response[i];
 	}
 	data.shrink_to_fit();
 
 	return data;
+}
+
+bool validateCRC( unsigned char* response )
+{
+	crc* c = reinterpret_cast<crc *>( &response[ MAX_DATA + 2 ] );
+	
+	return *c == crcFast( &response[2], MAX_DATA );
 }
 
 void readPacket( unsigned char* packet )
@@ -118,6 +163,8 @@ void readPacket( unsigned char* packet )
 	}
 	std::cout << std::endl;
 }
+
+
 void printchar( unsigned char c )
 {
 	using std::cout;
