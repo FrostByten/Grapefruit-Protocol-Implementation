@@ -44,8 +44,11 @@
 #include "Physical.h"
 
 char Name[] = "Irregardless Peer-to-Peer via Grapefruit";
-char printText[255];	//output buffer
+char printText[255] = "TEST";	//output buffer
 int X = 0, Y = 0; // Current coordinates
+const int analyticsDivider = 400;
+
+stringstream analytics;
 
 // Timeouts
 Timeouts timeouts;
@@ -55,6 +58,9 @@ HANDLE hComm;
 DCB dcb;
 HMENU hMenu;
 HWND hwnd;
+HDC hdc;
+PAINTSTRUCT paintstruct;
+
 WNDCLASSEX Wcl;
 OVERLAPPED ol = { 0 };
 
@@ -114,6 +120,9 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	// Calculate timeouts
 	calculateTimeouts(&timeouts);
+
+	// Create initial analytic values
+	updateAnalytics();
 
 	MSG Msg;
 
@@ -176,9 +185,6 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
                           WPARAM wParam, LPARAM lParam)
 {
-	HDC hdc;
-	PAINTSTRUCT paintstruct;
-
 	switch (Message)
 	{
 		case WM_COMMAND:
@@ -186,8 +192,18 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			switch (LOWORD (wParam))
 			{
 				case IDM_HELP:
-					MessageBox (hwnd, "TEMP", TEXT("Help"), MB_OK | MB_ICONINFORMATION);
+				{
+					const char* HELP_TEXT = "Irregardless is a communications program designed to "
+						"implement and display the functionality of the Grapefruit "
+						"Protocol for peer - to - peer wired and wireless communication. "
+						"\n\n"
+						"Irregardless contains functionality for transmitting single "
+						"characters and full text files across wired and wireless "
+						"environments, and is capable of tracking protocol statistics "
+						"for debugging and analytical purposes.";
+					MessageBox(hwnd, HELP_TEXT, TEXT("Help"), MB_OK | MB_ICONINFORMATION);
 					break;
+				}
 				case IDM_QUIT:
 					PostQuitMessage(0);
 					break;
@@ -206,7 +222,12 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 		case WM_PAINT:		// Process a repaint message
 			hdc = BeginPaint (hwnd, &paintstruct); // Acquire DC
 			TextOut (hdc, 0, 0, printText, strlen (printText)); // output character
+		
 			EndPaint (hwnd, &paintstruct); // Release DC
+
+			// Print analytics
+			updateAnalytics();
+
 			break;
 
 		case WM_DESTROY:
@@ -218,6 +239,89 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 	}
 	return 0;
 }
+
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: updateAnalytics
+--
+-- DATE: November 24, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--
+-- PROGRAMMER: Christofer Klassen
+--
+-- INTERFACE: void updateAnalytics();
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function re-pulls analytical information from the static Statistics object
+-- and updates the text on-screen.
+----------------------------------------------------------------------------------------------------------------------*/
+void updateAnalytics()
+{
+	Statistics* stats = Statistics::getInstance();
+
+	// Empty the string
+	analytics.clear();
+
+	// Add 
+	analytics << "ACK Received: " << stats->getACKReceived() << "\n";
+	analytics << "NAK Received: " << stats->getNAKReceived() << "\n";
+	analytics << "ACK Sent: " << stats->getACKSent() << "\n";
+	analytics << "NAK Sent: " << stats->getNAKSent() << "\n";
+
+	drawAnalytics();
+
+	return;
+}
+
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: drawAnalytics
+--
+-- DATE: November 24, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--
+-- PROGRAMMER: Christofer Klassen
+--
+-- INTERFACE: void drawAnalytics();
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function displays the analytics data to the screen.
+----------------------------------------------------------------------------------------------------------------------*/
+void drawAnalytics()
+{
+	int y = 0;
+	string analyticsSection;
+
+	// Acquire DC
+	hdc = GetDC(hwnd);
+
+	// Loop through and display each analytic
+	do
+	{
+		analyticsSection.clear();
+		getline(analytics, analyticsSection);
+		TextOut(hdc, analyticsDivider, y, analyticsSection.c_str(), analyticsSection.size());
+		
+		y += 16;
+
+	} while (analyticsSection.size() > 0);
+
+	// Release DC
+	ReleaseDC(hwnd, hdc); 
+
+	return;
+}
+
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: clearString
@@ -235,7 +339,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 -- RETURNS: void
 --
 -- NOTES:
--- This void empties the string buffer that contains the text that is printed
+-- This function empties the string buffer that contains the text that is printed
 -- to the screen from the port.
 ----------------------------------------------------------------------------------------------------------------------*/
 void clearString(char* str)

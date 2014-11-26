@@ -10,6 +10,8 @@ using std::srand;
 using std::string;
 using std::stringstream;
 
+void updateAnalytics();
+void drawAnalytics();
 void clearString(char* str);
 void printDebugString(char* str);
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
