@@ -23,6 +23,7 @@
 char sendSync;
 bool sending = false;
 bool receiving = false;
+Statistics *stats;
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: startComms
