@@ -20,6 +20,10 @@
 
 #include "Physical.h"
 
+char sendSync;
+bool sending = false;
+bool receiving = false;
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: startComms
 --
@@ -37,38 +41,114 @@
 --
 -- NOTES:
 -- This thread will begin the idle loop of the Grapefruit protocol and begin waiting for an ENQ
+-- and checking the buffer for data.
 ----------------------------------------------------------------------------------------------------------------------*/
 DWORD WINAPI startComms(LPVOID data)
 {
-	DWORD read;
-	char recieved;
-	DWORD eventmask = EV_RXCHAR;
-	
+	HANDLE hRxThrd;
+	hRxThrd = CreateThread(NULL, 0, startRx, NULL, 0, NULL);
+	if (!hRxThrd)
+	{
+		MessageBox(NULL, TEXT("Error creating Rx thread."), TEXT("Error"), MB_ICONWARNING | MB_OK);
+		CloseHandle(hRxThrd);
+		hRxThrd = NULL;
+		PostQuitMessage(0);
+	}
+
 	for(;;)
 	{
-		read = 0;
-		WaitCommEvent(hComm, &eventmask, &ol);
-
-		if (ReadFile(hComm, &recieved, 1, &read, &ol))
+		if(!receiving)
 		{
-			char disp[2] = { recieved, '\0' };
-			if (read)
-				MessageBox(NULL, disp, TEXT("Such wow!"), MB_OK);
-		}
-		else
-		{
-			DWORD err = GetLastError();
-			if (err == 0x3e5)
+			if(isBufferNotEmpty() && isResetTimerUp())
 			{
-				GetOverlappedResult(hComm, &ol, &read, TRUE);
-				char disp[2] = { recieved, '\0' };
-				if (read)
-					MessageBox(NULL, disp, TEXT("Such wow!"), MB_OK);
+				sending = true;
+				sendSync = SYN1;
+
+				sendControlChar(ENQ);
+				waitForEnqResponse();
 			}
 		}
 	}
 
 	return 0;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: waitForEnqResponse
+--
+-- DATE: November 24, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: void waitForEnqResponse(void)
+--
+-- RETURNS: void.
+--
+-- NOTES:
+-- Waits for a response from the receiving end and posts the buffer data if it receives one.
+----------------------------------------------------------------------------------------------------------------------*/
+void waitForEnqResponse()
+{
+	if(waitForControlChar(ACK))
+	{
+		sendData();
+	}
+
+	sending = false;
+	setTimer(getResetTime(&timeouts));
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendData
+--
+-- DATE: November 24, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: void sendData(void)
+--
+-- RETURNS: void.
+--
+-- NOTES:
+-- Keeps trying to send until the maximum number of misses or sends have been hit, or the buffer is empty.
+----------------------------------------------------------------------------------------------------------------------*/
+void sendData()
+{
+	int misses = 0;
+	int sent = 0;
+
+	unsigned char packet[1024];
+
+	while(isBufferNotEmpty() && misses < MAX_MISS && sent < MAX_SEND)
+	{
+		constructPacket(packet, MAX_SEND);
+		int dataSize = min(buffersize, 1018);
+		sendPacket(packet);
+		char response = receiveControlChar();
+		if(response == ACK)
+		{
+			Statistics.incACKReceived();
+			Statistics.incGoodPacketSent();
+			sent++;
+			sendSync = (sendSync==SYN1)?SYN2:SYN1;
+			popFromBuffer(dataSize);
+		}
+		else
+		{
+			misses++;
+			Statistics.incNAKReceived();
+			Statistics.incLostPacketSent();
+		}
+	}
+	
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -111,34 +191,72 @@ BOOL sendPacket(unsigned char* packet)
 --
 -- NOTES:
 -- The function waits for a packet of size defined by the PACKET_SIZE 
--- constant.
+-- constant and validates it. If the timeout is hit, the function returns FALSE,
+-- if the packet is invalid, 
 ----------------------------------------------------------------------------------------------------------------------*/
-BOOL receivePacket(unsigned char* packet)
+DWORD receivePacket(unsigned char* packet)
 {
-	DWORD dwEvent;
+	BOOL readRet;
 	HANDLE hData = packet;
-	BOOL ret;
+	DWORD ret = SUCCESSFUL_PACKET;
+	DWORD sizeRead = 0;
+	DWORD lastRead = 0;
+	DWORD dwCommEvent;
+	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
+	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
+	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)timeouts.timeoutSendAck;
 
-	dwEvent = WaitForMultipleObjects(PACKET_SIZE, &hData, FALSE, timeouts.timeoutSendAck);
-
-	switch(dwEvent)
+	if (!SetCommMask(hComm, EV_RXCHAR))
 	{
-		case (WAIT_OBJECT_0 + PACKET_SIZE) :
-			ret = TRUE;
-			break;
-		case (WAIT_ABANDONED_0 + 1) :
-			ret = FALSE;
-			break;
-		case (WAIT_TIMEOUT) :
-			ret = FALSE;
-			break;
-		case (WAIT_FAILED) :
-			ret = FALSE;
-			break;
-		default:
-			printf("Wait error: %d\n", GetLastError()); 
+		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
+		return SYSTEM_ERROR;
+	}
+
+	if (!SetCommTimeouts(hComm, lpCommTimeouts))
+	{
+		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
+		return SYSTEM_ERROR;
+	}
+
+	readRet = ReadFile(hComm, packet, PACKET_SIZE, &lastRead, &ol);
+		
+	if (GetLastError() != ERROR_IO_PENDING)
+	{
+		ret = SYSTEM_ERROR;
+	}
+	if (lastRead != PACKET_SIZE) {
+		ret = SYSTEM_ERROR;
+	}
+	if (!GetCommTimeouts(hComm, lpCommTimeouts))
+	{
+		ret = SYSTEM_ERROR;
+		printf("GetCommTimeouts error: %d\n", GetLastError());
+	}
+
+	if (ret != SUCCESSFUL_PACKET)
+			return ret;
+
+	if (readRet)
+	{
+		ret = SUCCESSFUL_PACKET;
+		if (validatePacket((unsigned char*)packet))
+		{
+			ret = SUCCESSFUL_PACKET;
+		} else
+		{
+			ret = INVALID_PACKET;
+		}
+	} else
+	{
+		ret = SYSTEM_ERROR;
+		printf("Wait error: %d\n", GetLastError()); 
 	}
 	return ret;
+}
+
+BOOL validatePacket(unsigned char *packet)
+{
+	return TRUE;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -162,4 +280,55 @@ BOOL receivePacket(unsigned char* packet)
 BOOL sendControlChar(char cChar)
 {
 	return (WriteFile(hComm, &cChar, 1, NULL, &ol));
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: receiveControlChar
+--
+-- DATE: November 18, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Thomas Tallentire
+--
+-- PROGRAMMER: Thomas Tallentire
+--
+-- INTERFACE: BOOL receiveControlChar(char cChar)
+--
+-- RETURNS: BOOl, whether or not the control character was received properly.
+--
+-- NOTES:
+-- The function waits for a control character on the comm port and returns 
+-- whether or not the read character matches the passed in character.
+----------------------------------------------------------------------------------------------------------------------*/
+BOOL receiveControlChar(char cChar, double waitTimeout)
+{
+	DWORD numRead;
+	BOOL readRet;
+	BOOL ret;
+	char temp = ' ';
+	HANDLE receiveChar = &temp;
+	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
+	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
+	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)waitTimeout;
+
+	if (!SetCommMask(hComm, EV_RXCHAR))
+	{
+		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
+		return SYSTEM_ERROR;
+	}
+
+	if (!SetCommTimeouts(hComm, lpCommTimeouts))
+	{
+		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
+		return SYSTEM_ERROR;
+	}
+
+	readRet = ReadFile(hComm, receiveChar, sizeof(char), &numRead, &ol);
+
+	if (readRet)
+		ret = TRUE;
+	else
+		ret = FALSE;
+	return ret;
 }

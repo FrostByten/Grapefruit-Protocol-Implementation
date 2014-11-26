@@ -15,6 +15,10 @@
 #define NAK 0x15
 
 #define PACKET_SIZE 1024
+#define SYSTEM_ERROR 3
+#define INVALID_PACKET 2
+#define TIMEOUT_PACKET 1
+#define SUCCESSFUL_PACKET 0
 
 extern HANDLE hComm;
 extern OVERLAPPED ol;
@@ -23,6 +27,11 @@ extern Timeouts timeouts;
 DWORD WINAPI startComms(LPVOID data);
 BOOL sendPacket(unsigned char* packet);
 BOOL receivePacket(unsigned char* packet);
+BOOL validatePacket(unsigned char *packet);
 BOOL sendControlChar(char cChar);
+BOOL receiveControlChar(char cChar, double waitTimeout);
+void waitForEnqResponse();
+void sendData();
+
 
 #endif
