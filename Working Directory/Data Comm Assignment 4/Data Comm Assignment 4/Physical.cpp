@@ -45,7 +45,9 @@ bool receiving = false;
 ----------------------------------------------------------------------------------------------------------------------*/
 DWORD WINAPI startComms(LPVOID data)
 {
-	HANDLE hRxThrd;
+	stats = Statistics::getInstance();
+
+	/*HANDLE hRxThrd;
 	hRxThrd = CreateThread(NULL, 0, startRx, NULL, 0, NULL);
 	if (!hRxThrd)
 	{
@@ -67,8 +69,50 @@ DWORD WINAPI startComms(LPVOID data)
 				sendControlChar(ENQ);
 				waitForEnqResponse();
 			}
+			sending = false;
 		}
-	}
+	}*/
+
+	return 0;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: startRx
+--
+-- DATE: November 17, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: DWORD WINAPI startRx(LPVOID data)
+--
+-- RETURNS: DWORD status. The return status of the thread
+--
+-- NOTES:
+-- This thread will begin the idle loop of the Grapefruit protocol and begin waiting for an ENQ.
+----------------------------------------------------------------------------------------------------------------------*/
+DWORD WINAPI startRx(LPVOID data)
+{
+	/*for(;;)
+	{
+		if(!sending)
+		{
+			if(waitForControlChar(ENQ))
+			{
+				receiving = true;
+				rxSync = SYN1;
+				stats->incENQReceived();
+
+				sendControlChar(ACK);
+				stats->incACKSent();
+				waitForAckResponse();
+			}
+			receiving = false;
+		}
+	}*/
 
 	return 0;
 }
@@ -93,13 +137,47 @@ DWORD WINAPI startComms(LPVOID data)
 ----------------------------------------------------------------------------------------------------------------------*/
 void waitForEnqResponse()
 {
-	if(waitForControlChar(ACK))
+	/*if(waitForControlChar(ACK))
 	{
 		sendData();
 	}
 
 	sending = false;
-	setTimer(getResetTime(&timeouts));
+	setTimer(getResetTime(&timeouts));*/
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: waitForAckResponse
+--
+-- DATE: November 24, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: void waitForAckResponse(void)
+--
+-- RETURNS: void.
+--
+-- NOTES:
+-- Waits for a response from the sending end and begins receiving packets if it receives one.
+----------------------------------------------------------------------------------------------------------------------*/
+void waitForAckResponse()
+{
+	/*unsigned char pack[PACKET_SIZE];
+
+	while(receiving)
+	{
+		if(!receivePacket(pack))
+			receiving = false;
+		else
+		{
+			stats->incGoodPacketReceived();
+			pushPacketToDisplayBuffer(pack);
+		}
+	}*/
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -122,7 +200,7 @@ void waitForEnqResponse()
 ----------------------------------------------------------------------------------------------------------------------*/
 void sendData()
 {
-	int misses = 0;
+	/*int misses = 0;
 	int sent = 0;
 
 	unsigned char packet[1024];
@@ -135,8 +213,8 @@ void sendData()
 		char response = receiveControlChar();
 		if(response == ACK)
 		{
-			Statistics.incACKReceived();
-			Statistics.incGoodPacketSent();
+			stats->incACKReceived();
+			stats->incGoodPacketSent();
 			sent++;
 			sendSync = (sendSync==SYN1)?SYN2:SYN1;
 			popFromBuffer(dataSize);
@@ -144,11 +222,12 @@ void sendData()
 		else
 		{
 			misses++;
-			Statistics.incNAKReceived();
-			Statistics.incLostPacketSent();
+			stats->incNAKReceived();
+			stats->incLostPacketSent();
 		}
 	}
-	
+
+	sending = false;*/
 }
 
 /*------------------------------------------------------------------------------------------------------------------
