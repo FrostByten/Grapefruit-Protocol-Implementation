@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include "Application.h"
 
+#define ETX 0x03
+
 using std::rand;
 
 static const int ENQ_TIMEOUT_SIZE = 5;
@@ -14,10 +16,17 @@ static const int PACKET_TIMEOUT_SIZE = 1200;
 static const int MAX_MISS = 3;
 static const int MAX_SEND = 10;
 static const int MILLISECONDS = 1000;
+static const int DATA_START = 2;
+static const int DATA_END = 1020;
+
+extern char sendBuffer[1024];
+extern char printText[2048];
 
 void calculateTimeouts( Timeouts* timeouts );
 double getResetTime( Timeouts* timeouts );
-
+bool isBufferNotEmpty();
+void pushPacketToDisplayBuffer(unsigned char *pack);
+void popFromBuffer(int count);
 
 /***********************************************************
  *

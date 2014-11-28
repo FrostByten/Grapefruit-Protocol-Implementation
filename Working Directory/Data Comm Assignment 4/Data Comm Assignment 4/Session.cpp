@@ -23,6 +23,8 @@
 #include "Application.h"
 #include "Session.h"
 
+int in_buff_place = 0;
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: calculateTimeouts
 --
@@ -82,4 +84,92 @@ double getResetTime( Timeouts* timeouts ) {
 
 	// Calculate and return the timeout
 	return ( double(randBits) / BIT_RATE ) * MILLISECONDS;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: isBufferNotEmpty
+--
+-- DATE: November 27, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: bool isBufferNotEmpty
+--
+-- RETURNS: bool - whether the input buffer is not empty
+--
+-- NOTES:
+-- This function checks the input buffer. If it is empty, it returns false, otherwise, it returns true.
+----------------------------------------------------------------------------------------------------------------------*/
+bool isBufferNotEmpty()
+{
+	if (sendBuffer[0] == '\0')
+		return false;
+	else
+		return true;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: pushPacketToDisplayBuffer
+--
+-- DATE: November 27, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: void pushPacketToDisplayBuffer(unsigned char *pack)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function pushes the data contained within a packet to the display buffer for rendering
+----------------------------------------------------------------------------------------------------------------------*/
+void pushPacketToDisplayBuffer(unsigned char *pack)
+{
+	for (int i = DATA_START; i < DATA_END; i++)
+	{
+		if (pack[i] == ETX)
+		{
+			in_buff_place++;
+			break;
+		}
+		printText[in_buff_place] = pack[i];
+		in_buff_place++;
+	}
+
+	printText[in_buff_place] = '\0';
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: popFromBuffer
+--
+-- DATE: November 27, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: void popFromBuffer(int count)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function pops a certain length of data from the input buffer, then slides the remaining data down
+-- to the front.
+----------------------------------------------------------------------------------------------------------------------*/
+void popFromBuffer(int count)
+{
+	for (int i = count; i < 1024; i++)
+	{
+		sendBuffer[i - count] = sendBuffer[i];
+		sendBuffer[i] = '\0';
+	}
 }

@@ -21,8 +21,10 @@
 #include "Physical.h"
 
 char sendSync;
+char rxSync;
 bool sending = false;
 bool receiving = false;
+bool waitForReset = false;
 Statistics *stats;
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -48,7 +50,7 @@ DWORD WINAPI startComms(LPVOID data)
 {
 	stats = Statistics::getInstance();
 
-	/*HANDLE hRxThrd;
+	HANDLE hRxThrd;
 	hRxThrd = CreateThread(NULL, 0, startRx, NULL, 0, NULL);
 	if (!hRxThrd)
 	{
@@ -62,7 +64,7 @@ DWORD WINAPI startComms(LPVOID data)
 	{
 		if(!receiving)
 		{
-			if(isBufferNotEmpty() && isResetTimerUp())
+			if(isBufferNotEmpty())
 			{
 				sending = true;
 				sendSync = SYN1;
@@ -71,8 +73,13 @@ DWORD WINAPI startComms(LPVOID data)
 				waitForEnqResponse();
 			}
 			sending = false;
+			if (waitForReset)
+			{
+				Sleep(getResetTime(&timeouts));
+				waitForReset = false;
+			}
 		}
-	}*/
+	}
 
 	return 0;
 }
@@ -97,11 +104,11 @@ DWORD WINAPI startComms(LPVOID data)
 ----------------------------------------------------------------------------------------------------------------------*/
 DWORD WINAPI startRx(LPVOID data)
 {
-	/*for(;;)
+	for(;;)
 	{
 		if(!sending)
 		{
-			if(waitForControlChar(ENQ))
+			if (receiveControlChar(ENQ, timeouts.timeoutSendAck))
 			{
 				receiving = true;
 				rxSync = SYN1;
@@ -113,7 +120,7 @@ DWORD WINAPI startRx(LPVOID data)
 			}
 			receiving = false;
 		}
-	}*/
+	}
 
 	return 0;
 }
@@ -138,13 +145,11 @@ DWORD WINAPI startRx(LPVOID data)
 ----------------------------------------------------------------------------------------------------------------------*/
 void waitForEnqResponse()
 {
-	/*if(waitForControlChar(ACK))
-	{
+	if (receiveControlChar(ACK, timeouts.timeoutSendEnq))
 		sendData();
-	}
 
 	sending = false;
-	setTimer(getResetTime(&timeouts));*/
+	waitForReset = true;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -167,7 +172,7 @@ void waitForEnqResponse()
 ----------------------------------------------------------------------------------------------------------------------*/
 void waitForAckResponse()
 {
-	/*unsigned char pack[PACKET_SIZE];
+	unsigned char pack[PACKET_SIZE];
 
 	while(receiving)
 	{
@@ -177,8 +182,9 @@ void waitForAckResponse()
 		{
 			stats->incGoodPacketReceived();
 			pushPacketToDisplayBuffer(pack);
+			rxSync = rxSync == SYN1 ? SYN2 : SYN1;
 		}
-	}*/
+	}
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -201,17 +207,17 @@ void waitForAckResponse()
 ----------------------------------------------------------------------------------------------------------------------*/
 void sendData()
 {
-	/*int misses = 0;
+	int misses = 0;
 	int sent = 0;
 
 	unsigned char packet[1024];
 
 	while(isBufferNotEmpty() && misses < MAX_MISS && sent < MAX_SEND)
 	{
-		constructPacket(packet, MAX_SEND);
-		int dataSize = min(buffersize, 1018);
+		//constructPacket(packet, MAX_SEND);
+		int dataSize = min(1024, 1018);
 		sendPacket(packet);
-		char response = receiveControlChar();
+		char response = 'f'; //receiveControlChar();
 		if(response == ACK)
 		{
 			stats->incACKReceived();
@@ -228,7 +234,8 @@ void sendData()
 		}
 	}
 
-	sending = false;*/
+	sending = false;
+	waitForReset = true;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -281,7 +288,6 @@ DWORD receivePacket(unsigned char* packet)
 	DWORD ret = SUCCESSFUL_PACKET;
 	DWORD sizeRead = 0;
 	DWORD lastRead = 0;
-	DWORD dwCommEvent;
 	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
 	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
 	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)timeouts.timeoutSendAck;
