@@ -44,7 +44,8 @@
 #include "Physical.h"
 
 char Name[] = "Irregardless Peer-to-Peer via Grapefruit";
-char printText[255] = "TEST";	//output buffer
+char printText[2048] = "TEST";	//output buffer
+char sendBuffer[1024]; //input buffer
 int X = 0, Y = 0; // Current coordinates
 int analyticsDivider = 400;
 
