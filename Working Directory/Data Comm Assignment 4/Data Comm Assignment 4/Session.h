@@ -40,6 +40,7 @@ class Statistics
 		void incLostPacketSent();
 		void incGoodPacketReceived();
 		void incBadPacketReceived();
+		void incLostPacketReceived();
 		void incACKSent();
 		void incENQSent();
 		void incNAKSent();
@@ -52,6 +53,7 @@ class Statistics
 		int getLostPacketSent();
 		int getGoodPacketReceived();
 		int getBadPacketReceived();
+		int getLostPacketReceived();
 		int getACKSent();
 		int getENQSent();
 		int getNAKSent();
@@ -80,6 +82,7 @@ class Statistics
 		int packetReceivedGood;
 		int packetReceivedBad;
 		int packetReceivedTotal;
+		int packetReceivedLost;
 
 		double totalPacketSentSize;
 		double totalPacketReceivedSize;

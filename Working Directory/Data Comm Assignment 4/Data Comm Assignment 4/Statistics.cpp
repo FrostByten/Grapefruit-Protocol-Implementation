@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include "Session.h"
+#include "Application.h"
 
 Statistics* Statistics::instance = nullptr;
 
@@ -14,9 +15,11 @@ Statistics::Statistics()
 
 	packetSentBad = 0;
 	packetSentGood = 0;
+	packetSentLost = 0;
 	packetSentTotal = 0;
 	packetReceivedBad = 0;
 	packetReceivedGood = 0;
+	packetReceivedLost = 0;
 	packetReceivedTotal = 0;
 
 	totalPacketReceivedSize = 0;
@@ -63,6 +66,11 @@ int Statistics::getBadPacketReceived()
 	return packetReceivedBad;
 }
 
+int Statistics::getLostPacketReceived()
+{
+	return packetReceivedLost;
+}
+
 int Statistics::getGoodPacketSent()
 {
 	return packetSentGood;
@@ -102,12 +110,16 @@ void Statistics::incGoodPacketSent()
 {
 	packetSentGood++;
 	packetSentTotal++;
+
+	refreshScreen();
 }
 
 void Statistics::incLostPacketSent()
 {
 	packetSentLost++;
 	packetSentTotal++;
+
+	refreshScreen();
 }
 
 
@@ -115,58 +127,88 @@ void Statistics::incBadPacketSent()
 {
 	packetSentBad++;
 	packetSentTotal++;
+
+	refreshScreen();
 }
 
 void Statistics::incGoodPacketReceived()
 {
 	packetReceivedGood++;
 	packetReceivedTotal++;
+
+	refreshScreen();
 }
 
 void Statistics::incBadPacketReceived()
 {
 	packetReceivedBad++;
 	packetReceivedTotal++;
+
+	refreshScreen();
+}
+
+void Statistics::incLostPacketReceived()
+{
+	packetReceivedLost++;
+	packetReceivedTotal++;
+
+	refreshScreen();
 }
 
 void Statistics::incACKReceived()
 {
 	recACK++;
+
+	refreshScreen();
 }
 
 void Statistics::incENQReceived()
 {
 	recENQ++;
+
+	refreshScreen();
 }
 
 void Statistics::incNAKReceived()
 {
 	recNAK++;
+
+	refreshScreen();
 }
 
 void Statistics::incACKSent()
 {
 	sentACK++;
+
+	refreshScreen();
 }
 
 void Statistics::incENQSent()
 {
 	sentENQ++;
+
+	refreshScreen();
 }
 
 void Statistics::incNAKSent()
 {
 	sentNAK++;
+
+	refreshScreen();
 }
 
 void Statistics::addPacketReceivedSize(char* packetData)
 {
 	totalPacketReceivedSize += strlen(packetData);
+
+	refreshScreen();
 }
 
 void Statistics::addPacketSentSize(char* packetData)
 {
 	totalPacketSentSize += strlen(packetData);
+
+	refreshScreen();
 }
 
 double Statistics::getAvgPacketReceivedSize()

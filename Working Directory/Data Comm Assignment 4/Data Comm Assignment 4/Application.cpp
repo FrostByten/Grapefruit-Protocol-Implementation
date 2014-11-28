@@ -29,7 +29,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-#define CONNECT_ON_START
+//#define CONNECT_ON_START
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
@@ -46,7 +46,7 @@
 char Name[] = "Irregardless Peer-to-Peer via Grapefruit";
 char printText[255] = "TEST";	//output buffer
 int X = 0, Y = 0; // Current coordinates
-const int analyticsDivider = 400;
+int analyticsDivider = 400;
 
 stringstream analytics;
 
@@ -220,6 +220,11 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			break;
 
 		case WM_PAINT:		// Process a repaint message
+			// Update the divider location
+			RECT rect;
+			GetWindowRect(hwnd, &rect);
+			analyticsDivider = rect.right - rect.left - ANALYTICS_WIDTH;
+
 			hdc = BeginPaint (hwnd, &paintstruct); // Acquire DC
 			TextOut (hdc, 0, 0, printText, strlen (printText)); // output character
 		
@@ -238,6 +243,32 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			return DefWindowProc (hwnd, Message, wParam, lParam);
 	}
 	return 0;
+}
+
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: refreshScreen
+--
+-- DATE: November 27, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--
+-- PROGRAMMER: Christofer Klassen
+--
+-- INTERFACE: void refreshScreen();
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function refreshes the screen, forcing a WM_PAINT call.
+----------------------------------------------------------------------------------------------------------------------*/
+void refreshScreen()
+{
+	InvalidateRect(hwnd, NULL, true);
+
+	return;
 }
 
 
@@ -267,11 +298,15 @@ void updateAnalytics()
 	// Empty the string
 	analytics.clear();
 
-	// Add 
+	// Add analytic counters
 	analytics << "ACK Received: " << stats->getACKReceived() << "\n";
 	analytics << "NAK Received: " << stats->getNAKReceived() << "\n";
 	analytics << "ACK Sent: " << stats->getACKSent() << "\n";
 	analytics << "NAK Sent: " << stats->getNAKSent() << "\n";
+	analytics << "ENQ Received: " << stats->getENQReceived() << "\n";
+	analytics << "ENQ Sent: " << stats->getENQSent() << "\n";
+	analytics << "Bad Packet Received: " << stats->getBadPacketReceived() << "\n";
+	analytics << "Bad Packet Sent: " << stats->getBadPacketSent() << "\n";
 
 	drawAnalytics();
 
@@ -318,6 +353,46 @@ void drawAnalytics()
 
 	// Release DC
 	ReleaseDC(hwnd, hdc); 
+
+	return;
+}
+
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: saveAnalytics
+--
+-- DATE: November 26, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--
+-- PROGRAMMER: Christofer Klassen
+--
+-- INTERFACE: void saveAnalytics();
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function saves all analytics to a file.
+----------------------------------------------------------------------------------------------------------------------*/
+void saveAnalytics()
+{
+	Statistics* stats = Statistics::getInstance();
+
+	ofstream file;
+	file.open("Protocol Analytics.txt");
+
+	file << "ACK Received: " << stats->getACKReceived() << "\n";
+	file << "NAK Received: " << stats->getNAKReceived() << "\n";
+	file << "ACK Sent: " << stats->getACKSent() << "\n";
+	file << "NAK Sent: " << stats->getNAKSent() << "\n";
+	file << "ENQ Received: " << stats->getENQReceived() << "\n";
+	file << "ENQ Sent: " << stats->getENQSent() << "\n";
+	file << "Bad Packet Received: " << stats->getBadPacketReceived() << "\n";
+	file << "Bad Packet Sent: " << stats->getBadPacketSent() << "\n";
+
+	file.close();
 
 	return;
 }
