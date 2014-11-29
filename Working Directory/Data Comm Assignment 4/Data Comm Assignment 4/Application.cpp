@@ -29,7 +29,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-//#define CONNECT_ON_START
+#define CONNECT_ON_START
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
@@ -98,7 +98,7 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 	BuildCommDCB(TEXT("96,N,8,1"), &dcb);
 
 	#ifdef CONNECT_ON_START
-		if ((hComm = CreateFile(TEXT("COM1"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 
+		if ((hComm = CreateFile(TEXT("COM3"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 
 			FILE_FLAG_OVERLAPPED, NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
 		{
 			MessageBox(NULL, TEXT("Error connecting to modem, exiting..."), TEXT("Error"), MB_OK);
@@ -206,6 +206,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 					break;
 				}
 				case IDM_QUIT:
+					closePort(hComm);
 					PostQuitMessage(0);
 					break;
 				case IDM_SENDTEXTFILE:
@@ -237,6 +238,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			break;
 
 		case WM_DESTROY:
+			closePort(hComm);
       		PostQuitMessage(0);
 			break;
 

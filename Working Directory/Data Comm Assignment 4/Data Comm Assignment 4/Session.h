@@ -27,6 +27,7 @@ double getResetTime( Timeouts* timeouts );
 bool isBufferNotEmpty();
 void pushPacketToDisplayBuffer(unsigned char *pack);
 void popFromBuffer(int count);
+void closePort( HANDLE hComm );
 
 /***********************************************************
  *

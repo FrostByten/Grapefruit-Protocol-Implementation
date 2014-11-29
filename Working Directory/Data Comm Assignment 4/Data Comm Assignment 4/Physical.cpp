@@ -70,6 +70,8 @@ DWORD WINAPI startComms(LPVOID data)
 				sendSync = SYN1;
 
 				sendControlChar(ENQ);
+				printDebugString("TEST");
+				stats->incENQSent();
 				waitForEnqResponse();
 			}
 			sending = false;

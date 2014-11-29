@@ -25,6 +25,33 @@
 
 int in_buff_place = 0;
 
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: closePort
+--
+-- DATE: November 28, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--
+-- PROGRAMMER: Christofer Klassen
+--
+-- INTERFACE: void closePort(HANDLE hComm);
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function closes the communications port.
+----------------------------------------------------------------------------------------------------------------------*/
+void closePort(HANDLE hComm)
+{
+	if (!CloseHandle(hComm))
+	{
+		MessageBox(NULL, TEXT("Port failed to close."), TEXT("Error"), MB_OK | MB_ICONERROR);
+	}
+}
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: calculateTimeouts
 --
