@@ -32,6 +32,7 @@ void drawAnalytics();
 void saveAnalytics();
 void clearString(char* str);
 void printDebugString(char* str);
+void fillSendBuffer();
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
 
 typedef struct Timeouts Timeouts;

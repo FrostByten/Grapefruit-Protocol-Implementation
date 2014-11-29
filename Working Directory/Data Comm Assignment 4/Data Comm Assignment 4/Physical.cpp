@@ -219,7 +219,7 @@ void sendData()
 			maxSent = TRUE;
 		else
 			maxSent = FALSE;
-		int dataSize = constructPacket(packet, maxSent);
+		int dataSize = 0;//constructPacket(packet, maxSent);
 		sendPacket(packet);
 		char response = receiveGenControlChar(timeouts.timeoutSendPacket);
 		if (response != NULL)
@@ -337,13 +337,13 @@ DWORD receivePacket(unsigned char* packet)
 	if (readRet)
 	{
 		ret = SUCCESSFUL_PACKET;
-		if (validatePacket((unsigned char*)packet))
+		/*if (validatePacket(packet))
 		{
 			ret = SUCCESSFUL_PACKET;
 		} else
 		{
 			ret = INVALID_PACKET;
-		}
+		}*/
 	} else
 	{
 		ret = SYSTEM_ERROR;
@@ -444,7 +444,7 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 --
 -- INTERFACE: BOOL receiveENQ()
 --
--- RETURNS: BOOl, whether or not the ENQ was received properly.
+-- RETURNS: BOOL, whether or not the ENQ was received properly.
 --
 -- NOTES:
 -- The function waits for a control character on the comm port for a certain timeout.

@@ -29,7 +29,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-#define CONNECT_ON_START
+//#define CONNECT_ON_START
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
@@ -58,6 +58,8 @@ Timeouts timeouts;
 
 HANDLE hThrd;
 HANDLE hComm;
+HWND hWndButton;
+HWND hEdit;
 DCB dcb;
 HMENU hMenu;
 HWND hwnd;
@@ -214,13 +216,15 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 				case IDM_SENDTEXTFILE:
 					// TODO: Add a text file to the buffer
 					break;
+				case IDC_SEND_BTN:
+					fillSendBuffer();
+					break;
 			}
 			break;
 			
 		case WM_CHAR:
-			// TODO: Add a character to the send buffer
-			if(wParam >= 0x20 && wParam <= 0x7E) 
-				WriteFile(hComm, &wParam, 1, NULL, &ol);
+			if (wParam == 0x0D)
+				fillSendBuffer();
 			break;
 
 		case WM_PAINT:		// Process a repaint message
@@ -237,6 +241,22 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			// Print analytics
 			updateAnalytics();
 
+			break;
+
+		case WM_CREATE:
+			hWndButton = CreateWindowEx(NULL,
+				"BUTTON",
+				"Send",
+				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+				470, 328, 120, 24, hwnd, (HMENU)IDC_SEND_BTN,
+				GetModuleHandle(NULL),NULL);
+
+			hEdit = CreateWindowEx(WS_EX_CLIENTEDGE,
+				"EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
+				2, 328, 468, 25, hwnd, (HMENU)IDC_EDIT_TXT,
+				GetModuleHandle(NULL), NULL);
+
+			SendMessage(hEdit, EM_SETLIMITTEXT, 1024, '\0');
 			break;
 
 		case WM_DESTROY:
@@ -458,4 +478,30 @@ void printDebugString(char* str)
 {
 	MessageBox(NULL, str, "Testing", MB_OK);
 	return;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: fillSendBuffer
+--
+-- DATE: November 29, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: void fillSendBuffer();
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function fills the send buffer with the contents of IDC_EDIT_TXT
+----------------------------------------------------------------------------------------------------------------------*/
+void fillSendBuffer()
+{
+	TCHAR buff[1024];
+	GetWindowText(hEdit, buff, 1024);
+	MessageBox(hwnd, buff, TEXT("TEST"), MB_OK);
+	SendMessage(hEdit, WM_SETTEXT, 1, '\0');
 }
