@@ -20,7 +20,6 @@
 ----------------------------------------------------------------------------------------------------------------------*/
 
 #include <windows.h>
-#include "Application.h"
 #include "Session.h"
 
 int in_buff_place = 0;
@@ -110,6 +109,39 @@ bool isBufferNotEmpty()
 		return false;
 	else
 		return true;
+}
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: getBufferSize
+--
+-- DATE: November 27, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Thomas Tallentire
+--
+-- PROGRAMMER: Thomas Tallentire
+--
+-- INTERFACE: DWORD getBufferSize
+--
+-- RETURNS: DWORD - size of the valid data in the buffer
+--
+-- NOTES:
+-- This function checks the input buffer and returns the amount of data that can
+-- be sent.
+----------------------------------------------------------------------------------------------------------------------*/
+DWORD getBufferSize()
+{
+	DWORD validDataToSend = 0;
+	for (int i = 0; i < SEND_BUF_SIZE; i++)
+	{
+		if (sendBuffer[i] != '\0')
+			validDataToSend++;
+		else
+			break;
+	}
+		
+	return validDataToSend;
 }
 
 /*------------------------------------------------------------------------------------------------------------------

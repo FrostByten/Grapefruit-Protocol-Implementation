@@ -2,9 +2,8 @@
 #define _SESSION
 
 #include <cstdlib>
-#include "Application.h"
 
-#define ETX 0x03
+#include "Application.h"
 
 using std::rand;
 
@@ -19,12 +18,13 @@ static const int MILLISECONDS = 1000;
 static const int DATA_START = 2;
 static const int DATA_END = 1020;
 
-extern char sendBuffer[1024];
-extern char printText[2048];
+extern char sendBuffer[];
+extern char printText[];
 
 void calculateTimeouts( Timeouts* timeouts );
 double getResetTime( Timeouts* timeouts );
 bool isBufferNotEmpty();
+DWORD getBufferSize();
 void pushPacketToDisplayBuffer(unsigned char *pack);
 void popFromBuffer(int count);
 
