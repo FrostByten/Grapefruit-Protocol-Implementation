@@ -19,6 +19,7 @@ BOOL sendPacket(unsigned char* packet);
 DWORD receivePacket(unsigned char* packet);
 BOOL sendControlChar(char cChar);
 BOOL receiveControlChar(char cChar, double waitTimeout);
+BOOL receiveENQ();
 char receiveGenControlChar(double waitTimeout);
 void waitForEnqResponse();
 void waitForAckResponse();

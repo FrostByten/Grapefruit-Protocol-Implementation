@@ -40,19 +40,24 @@
 -- characters, has up to 1018 bytes of data, padded with ETX characters if there is less data.  It then has
 -- a 32 bit CRC appended to the last four bytes in setCRC();
 ----------------------------------------------------------------------------------------------------------------------*/
-void constructPacket( unsigned char* packet, size_t maxSends ) 
+DWORD constructPacket( unsigned char* packet, BOOL maxSent ) 
 {
 	DWORD totalData = getBufferSize();
+	DWORD dataSent = 0;
 	//should check this at a higher level, so they know		
 	if( totalData > MAX_DATA )
 	{
-		packet[0] = ETB;
+		if (maxSent)
+			packet[0] = EOT;
+		else
+			packet[0] = ETB;
 		packet[1] = syncSend;
 		
 		for( size_t i = 0; i < MAX_DATA; i++ )
 		{
 			packet[i + 2] = (unsigned char)sendBuffer[i];
 		}
+		dataSent = MAX_DATA;
 	}
 	else
 	{
@@ -67,12 +72,13 @@ void constructPacket( unsigned char* packet, size_t maxSends )
 		{
 			packet[i + 2] = ETX;
 		}
+		dataSent = totalData;
 	}
 	
 	syncSend = ( syncSend == SYN1 ) ? SYN2 : SYN1;
 	setCRC( packet );
 	
-	return;
+	return totalData;
 }
 
 /*------------------------------------------------------------------------------------------------------------------

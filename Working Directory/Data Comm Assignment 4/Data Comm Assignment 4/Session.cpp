@@ -226,7 +226,7 @@ void pushPacketToDisplayBuffer(unsigned char *pack)
 ----------------------------------------------------------------------------------------------------------------------*/
 void popFromBuffer(int count)
 {
-	for (int i = count; i < 1024; i++)
+	for (int i = count; i < 1018; i++)
 	{
 		sendBuffer[i - count] = sendBuffer[i];
 		sendBuffer[i] = '\0';

@@ -13,7 +13,7 @@ extern unsigned char syncRx;
 #define MAX_SENDS 5
 
 
-void constructPacket( unsigned char* packet, size_t maxSends ); 
+DWORD constructPacket( unsigned char* packet, BOOL maxSent ); 
 void readPacket( unsigned char* packet );
 void setCRC( unsigned char* packet );
 std::string trimResponse( unsigned char* response );

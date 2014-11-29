@@ -108,7 +108,7 @@ DWORD WINAPI startRx(LPVOID data)
 	{
 		if(!sending)
 		{
-			if (receiveControlChar(ENQ, timeouts.timeoutSendAck))
+			if (receiveENQ())
 			{
 				receiving = true;
 				syncRx = SYN1;
@@ -209,13 +209,17 @@ void sendData()
 {
 	int misses = 0;
 	int sent = 0;
+	BOOL maxSent = FALSE;
 
 	unsigned char packet[PACKET_SIZE];
 
 	while(isBufferNotEmpty() && misses < MAX_MISS && sent < MAX_SEND)
 	{
-		constructPacket(packet, MAX_SEND);
-		int dataSize = min(PACKET_SIZE, MAX_DATA);
+		if (sent == MAX_SEND - 1)
+			maxSent = TRUE;
+		else
+			maxSent = FALSE;
+		int dataSize = constructPacket(packet, maxSent);
 		sendPacket(packet);
 		char response = receiveGenControlChar(timeouts.timeoutSendPacket);
 		if (response != NULL)
@@ -237,6 +241,7 @@ void sendData()
 		}
 		else
 		{
+			misses++;
 			stats->incLostPacketSent();
 		}
 	}
@@ -427,6 +432,61 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 }
 
 /*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: receiveENQ
+--
+-- DATE: November 18, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Thomas Tallentire
+--
+-- PROGRAMMER: Thomas Tallentire
+--
+-- INTERFACE: BOOL receiveENQ()
+--
+-- RETURNS: BOOl, whether or not the ENQ was received properly.
+--
+-- NOTES:
+-- The function waits for a control character on the comm port for a certain timeout.
+----------------------------------------------------------------------------------------------------------------------*/
+BOOL receiveENQ()
+{
+	DWORD numRead;
+	DWORD dwCommEvent;
+	BOOL ret = TRUE;
+	char temp = ' ';
+	HANDLE receiveChar = &temp;
+
+	if (!SetCommMask(hComm, EV_RXCHAR))
+	{
+		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
+		return SYSTEM_ERROR;
+	}
+
+	if (WaitCommEvent(hComm, &dwCommEvent, &ol))
+	{
+		if (!ReadFile(hComm, receiveChar, sizeof(char), &numRead, &ol))
+		{
+			if (GetLastError() != ERROR_IO_PENDING)
+			{
+				ret = FALSE;
+			}
+			else
+			{
+				if ((char)receiveChar != ENQ)
+					ret = FALSE;
+			}
+		}
+		else
+		{
+			if ((char)receiveChar != ENQ)
+				ret = FALSE;
+		}
+	}
+
+	return ret;
+}
+/*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: receiveControlChar
 --
 -- DATE: November 18, 2014
@@ -448,7 +508,6 @@ char receiveGenControlChar(double waitTimeout)
 {
 	DWORD numRead;
 	BOOL readRet;
-	BOOL ret;
 	char temp = ' ';
 	HANDLE receiveChar = &temp;
 	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
