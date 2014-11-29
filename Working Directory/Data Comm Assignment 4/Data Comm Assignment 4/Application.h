@@ -1,11 +1,12 @@
+#ifndef _IRREGARDLESS
+#define _IRREGARDLESS
+
 #include <string>
 #include <sstream>
 #include <cstdlib>
 #include <fstream>
 #include <time.h>
-
-#ifndef _IRREGARDLESS
-#define _IRREGARDLESS
+#include <windows.h>
 
 using std::srand;
 using std::string;
@@ -13,6 +14,17 @@ using std::stringstream;
 using std::ofstream;
 
 const int ANALYTICS_WIDTH = 200;
+const int SEND_BUF_SIZE = 10240;
+
+#define EOT 0x04
+#define ETB 0x17
+#define ETX 0x03
+#define SYN1 0x12
+#define SYN2 0x13
+#define RVI 0x11
+#define ENQ 0x05
+#define ACK 0x06
+#define NAK 0x15
 
 void refreshScreen();
 void updateAnalytics();

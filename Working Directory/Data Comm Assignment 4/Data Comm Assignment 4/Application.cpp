@@ -36,16 +36,18 @@
 #pragma warning (disable: 4018)
 #pragma warning (disable: 4244)
 
-#include <windows.h>
+
 #include <stdio.h>
 #include "Menu.h"
-#include "Application.h"
-#include "Session.h"
 #include "Physical.h"
 
 char Name[] = "Irregardless Peer-to-Peer via Grapefruit";
 char printText[2048] = "TEST";	//output buffer
-char sendBuffer[1024]; //input buffer
+char sendBuffer[SEND_BUF_SIZE]; //input buffer
+
+unsigned char syncSend;
+unsigned char syncRx;
+
 int X = 0, Y = 0; // Current coordinates
 int analyticsDivider = 400;
 
