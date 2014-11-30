@@ -105,7 +105,7 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	#ifdef CONNECT_ON_START
 		if ((hComm = CreateFile(TEXT("COM1"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 
-			FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
+			FILE_FLAG_OVERLAPPED, NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
 		{
 			MessageBox(NULL, TEXT("Error connecting to modem, exiting..."), TEXT("Error"), MB_OK);
 			PurgeComm(hComm, PURGE_RXCLEAR | PURGE_TXCLEAR);

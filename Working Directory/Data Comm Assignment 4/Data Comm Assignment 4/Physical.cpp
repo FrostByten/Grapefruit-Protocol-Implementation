@@ -470,10 +470,10 @@ BOOL receiveENQ()
 	}
 
 	// Wait for a char to appear
-	if (WaitCommEvent(hComm, &dwCommEvent, NULL))
+	if (WaitCommEvent(hComm, &dwCommEvent, &ol))
 	{
 		// Read a char from the file and check if it's ENQ
-		if (ReadFile(hComm, &temp, 1, &numRead, NULL) && temp == ENQ)
+		if (ReadFile(hComm, &temp, 1, &numRead, &ol) && temp == ENQ)
 		{
 			ret = TRUE;
 		}
