@@ -68,7 +68,7 @@ DWORD WINAPI startComms(LPVOID data)
 				syncSend = SYN1;
 
 				sendControlChar(ENQ);
-				printDebugString("TEST");
+				//printDebugString("TEST");
 				stats->incENQSent();
 				waitForEnqResponse();
 			}
@@ -473,10 +473,16 @@ BOOL receiveENQ()
 	if (WaitCommEvent(hComm, &dwCommEvent, &ol))
 	{
 		// Read a char from the file and check if it's ENQ
-		if (ReadFile(hComm, &temp, 1, &numRead, &ol) && temp == ENQ)
+		if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
 		{
-			ret = TRUE;
+			DWORD err = GetLastError();
+ 			if (err == 0x3e5)
+ 			{
+				GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+			}
 		}
+		if(temp == ENQ)
+			ret = TRUE;
 	}
 
 	return ret;
