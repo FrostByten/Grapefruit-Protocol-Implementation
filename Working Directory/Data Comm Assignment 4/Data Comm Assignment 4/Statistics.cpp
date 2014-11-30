@@ -38,7 +38,7 @@ int Statistics::getACKReceived()
 
 int Statistics::getENQReceived()
 {
-	return sentENQ;
+	return recENQ;
 }
 
 int Statistics::getENQSent()

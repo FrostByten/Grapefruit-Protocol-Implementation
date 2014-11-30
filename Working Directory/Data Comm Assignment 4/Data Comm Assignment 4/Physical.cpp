@@ -72,7 +72,9 @@ DWORD WINAPI startComms(LPVOID data)
 				stats->incENQSent();
 				waitForEnqResponse();
 			}
+
 			sending = false;
+
 			if (waitForReset)
 			{
 				Sleep(getResetTime(&timeouts));
@@ -80,7 +82,9 @@ DWORD WINAPI startComms(LPVOID data)
 			}
 		}
 	}
+
 	sendControlChar(ACK);
+
 	return 0;
 }
 
@@ -110,13 +114,14 @@ DWORD WINAPI startRx(LPVOID data)
 		{
 			if (receiveENQ())
 			{
+				printDebugString("HEY!");
 				receiving = true;
 				syncRx = SYN1;
 				stats->incENQReceived();
 
-				sendControlChar(ACK);
-				stats->incACKSent();
-				waitForAckResponse();
+				//sendControlChar(ACK);
+				//stats->incACKSent();
+				//waitForAckResponse();
 			}
 			receiving = false;
 		}
@@ -453,34 +458,24 @@ BOOL receiveENQ()
 {
 	DWORD numRead;
 	DWORD dwCommEvent;
-	BOOL ret = TRUE;
-	char temp = ' ';
-	HANDLE receiveChar = &temp;
+	BOOL ret = FALSE;
+	char temp;
+	LPVOID receiveChar = &temp;
 
+	// Set the comm mask to receiving a char
 	if (!SetCommMask(hComm, EV_RXCHAR))
 	{
 		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
 		return SYSTEM_ERROR;
 	}
 
-	if (WaitCommEvent(hComm, &dwCommEvent, &ol))
+	// Wait for a char to appear
+	if (WaitCommEvent(hComm, &dwCommEvent, NULL))
 	{
-		if (!ReadFile(hComm, receiveChar, sizeof(char), &numRead, &ol))
+		// Read a char from the file and check if it's ENQ
+		if (ReadFile(hComm, &temp, 1, &numRead, NULL) && temp == ENQ)
 		{
-			if (GetLastError() != ERROR_IO_PENDING)
-			{
-				ret = FALSE;
-			}
-			else
-			{
-				if ((char)receiveChar != ENQ)
-					ret = FALSE;
-			}
-		}
-		else
-		{
-			if ((char)receiveChar != ENQ)
-				ret = FALSE;
+			ret = TRUE;
 		}
 	}
 

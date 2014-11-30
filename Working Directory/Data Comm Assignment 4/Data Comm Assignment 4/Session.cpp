@@ -45,10 +45,10 @@ int in_buff_place = 0;
 ----------------------------------------------------------------------------------------------------------------------*/
 void closePort(HANDLE hComm)
 {
-	if (!CloseHandle(hComm))
-	{
-		MessageBox(NULL, TEXT("Port failed to close."), TEXT("Error"), MB_OK | MB_ICONERROR);
-	}
+	//if (!CloseHandle(hComm))
+	//{
+	//	MessageBox(NULL, TEXT("Port failed to close."), TEXT("Error"), MB_OK | MB_ICONERROR);
+	//}
 }
 
 /*------------------------------------------------------------------------------------------------------------------

@@ -29,7 +29,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-//#define CONNECT_ON_START
+#define CONNECT_ON_START
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
@@ -42,7 +42,7 @@
 #include "Physical.h"
 
 char Name[] = "Irregardless Peer-to-Peer via Grapefruit";
-char printText[2048] = "TEST";	//output buffer
+char printText[2048] = "";	//output buffer
 char sendBuffer[SEND_BUF_SIZE]; //input buffer
 
 unsigned char syncSend;
@@ -104,8 +104,8 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 	BuildCommDCB(TEXT("96,N,8,1"), &dcb);
 
 	#ifdef CONNECT_ON_START
-		if ((hComm = CreateFile(TEXT("COM3"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 
-			FILE_FLAG_OVERLAPPED, NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
+		if ((hComm = CreateFile(TEXT("COM1"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 
+			FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
 		{
 			MessageBox(NULL, TEXT("Error connecting to modem, exiting..."), TEXT("Error"), MB_OK);
 			PurgeComm(hComm, PURGE_RXCLEAR | PURGE_TXCLEAR);
@@ -263,7 +263,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 
 		case WM_DESTROY:
 			#ifdef CONNECT_ON_START
-				closePort(hComm)
+				closePort(hComm);
 			#endif
       		PostQuitMessage(0);
 			break;
