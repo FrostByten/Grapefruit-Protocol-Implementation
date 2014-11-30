@@ -48,6 +48,8 @@ char sendBuffer[SEND_BUF_SIZE]; //input buffer
 unsigned char syncSend;
 unsigned char syncRx;
 
+FAR WNDPROC DefEditProc;
+
 int X = 0, Y = 0; // Current coordinates
 int analyticsDivider = 400;
 
@@ -193,7 +195,6 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 	switch (Message)
 	{
 		case WM_COMMAND:
-
 			switch (LOWORD (wParam))
 			{
 				case IDM_HELP:
@@ -223,8 +224,6 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			break;
 			
 		case WM_CHAR:
-			if (wParam == 0x0D)
-				fillSendBuffer();
 			break;
 
 		case WM_PAINT:		// Process a repaint message
@@ -257,19 +256,64 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 				GetModuleHandle(NULL), NULL);
 
 			SendMessage(hEdit, EM_SETLIMITTEXT, 1024, '\0');
+
+			DefEditProc = (WNDPROC)GetWindowLong(hEdit, GWL_WNDPROC);
+			SetWindowLong(hEdit, GWL_WNDPROC, (long)EditTxtProc);
 			break;
 
 		case WM_DESTROY:
-			closePort(hComm);
+			#ifdef CONNECT_ON_START
+				closePort(hComm)
+			#endif
       		PostQuitMessage(0);
 			break;
 
 		default:
 			return DefWindowProc (hwnd, Message, wParam, lParam);
 	}
+
 	return 0;
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: EditTxtProc
+--
+-- DATE: November 29, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Lewis Scott
+--
+-- PROGRAMMER: Lewis Scott
+--
+-- INTERFACE: LRESULT CALLBACK EditTxtProc(HWND hDlg, 
+--				UINT message, WPARAM wParam, LPARAM lParam) 
+--
+-- RETURNS: LRESULT
+--
+-- NOTES:
+-- This function handles all messages received by the edit control.
+-- If the user hits the enter key while the edit control is in focus,
+-- it calls fillSendBuffer.
+----------------------------------------------------------------------------------------------------------------------*/
+LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
+{
+	switch (message) 
+	{
+		case WM_CHAR:
+			if (wParam == VK_RETURN) 
+			{
+				fillSendBuffer();
+				return(0);
+			}
+			else return((LRESULT)CallWindowProc((WNDPROC)DefEditProc, hDlg, message, wParam, lParam));
+			break;
+		default:
+			return((LRESULT)CallWindowProc((WNDPROC)DefEditProc, hDlg, message, wParam, lParam));
+			break;
+	}
+	return(0);
+}
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: refreshScreen
@@ -292,8 +336,6 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 void refreshScreen()
 {
 	InvalidateRect(hwnd, NULL, true);
-
-	return;
 }
 
 
@@ -334,8 +376,6 @@ void updateAnalytics()
 	analytics << "Bad Packet Sent: " << stats->getBadPacketSent() << "\n";
 
 	drawAnalytics();
-
-	return;
 }
 
 
@@ -378,8 +418,6 @@ void drawAnalytics()
 
 	// Release DC
 	ReleaseDC(hwnd, hdc); 
-
-	return;
 }
 
 
@@ -418,8 +456,6 @@ void saveAnalytics()
 	file << "Bad Packet Sent: " << stats->getBadPacketSent() << "\n";
 
 	file.close();
-
-	return;
 }
 
 
@@ -451,8 +487,6 @@ void clearString(char* str)
 
 	X = 0;
 	Y = 0;
-
-	return;
 }
 
 
@@ -477,7 +511,6 @@ void clearString(char* str)
 void printDebugString(char* str)
 {
 	MessageBox(NULL, str, "Testing", MB_OK);
-	return;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -500,8 +533,27 @@ void printDebugString(char* str)
 ----------------------------------------------------------------------------------------------------------------------*/
 void fillSendBuffer()
 {
-	TCHAR buff[1024];
-	GetWindowText(hEdit, buff, 1024);
-	MessageBox(hwnd, buff, TEXT("TEST"), MB_OK);
-	SendMessage(hEdit, WM_SETTEXT, 1, '\0');
+	TCHAR textbuff[1024];
+	GetWindowText(hEdit, textbuff, 1024);
+
+	for (int i = 0; i < (SEND_BUF_SIZE - 1024); i++)
+	{
+		if (sendBuffer[i] == '\0')
+		{
+			for (int j = i; j < 1024; j++)
+			{
+				if (textbuff[j] == '\0')
+				{
+					SendMessage(hEdit, WM_SETTEXT, 1, '\0');
+					return;
+				}
+				else
+				{
+					sendBuffer[i] = textbuff[j];
+					i++;
+				}
+			}
+			SendMessage(hEdit, WM_SETTEXT, 1, '\0');
+		}
+	}
 }

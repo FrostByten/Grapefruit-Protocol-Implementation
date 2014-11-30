@@ -34,6 +34,7 @@ void clearString(char* str);
 void printDebugString(char* str);
 void fillSendBuffer();
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 typedef struct Timeouts Timeouts;
 struct Timeouts {
