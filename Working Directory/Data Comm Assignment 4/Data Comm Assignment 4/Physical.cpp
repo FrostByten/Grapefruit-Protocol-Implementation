@@ -68,9 +68,9 @@ DWORD WINAPI startComms(LPVOID data)
 				syncSend = SYN1;
 
 				sendControlChar(ENQ);
-				//printDebugString("TEST");
 				stats->incENQSent();
 				waitForEnqResponse();
+				while(1);
 			}
 
 			sending = false;
@@ -147,8 +147,11 @@ DWORD WINAPI startRx(LPVOID data)
 void waitForEnqResponse()
 {
 	if (receiveControlChar(ACK, timeouts.timeoutSendEnq))
+	{
+		stats->incACKReceived();
 		sendData();
-
+	}
+		
 	sending = false;
 	waitForReset = true;
 }
@@ -374,17 +377,18 @@ DWORD receivePacket(unsigned char* packet)
 ----------------------------------------------------------------------------------------------------------------------*/
 BOOL sendControlChar(char cChar)
 {
-	return (WriteFile(hComm, &cChar, 1, NULL, &ol));
-	/*if(!WriteFile(hComm, &cChar, 1, NULL, &ol))
+	DWORD temp;
+	//return (WriteFile(hComm, &cChar, 1, NULL, &ol));
+	if(!WriteFile(hComm, &cChar, 1, &temp, &ol))
 	{
 		DWORD err = GetLastError();
  		if (err == 0x3e5)
  		{
-			GetOverlappedResult(hComm, &ol, NULL, TRUE);
+			GetOverlappedResult(hComm, &ol, &temp, TRUE);
 		}
 		return TRUE;
 	}
-	return TRUE;*/
+	return TRUE;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -408,10 +412,10 @@ BOOL sendControlChar(char cChar)
 BOOL receiveControlChar(char cChar, double waitTimeout)
 {
 	DWORD numRead;
-	BOOL readRet;
+	DWORD err;
+	BOOL readRet = FALSE;
 	BOOL ret;
-	char temp = ' ';
-	HANDLE receiveChar = &temp;
+	char receiveChar = '\0';
 	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
 	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
 	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)waitTimeout;
@@ -428,7 +432,44 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 		return SYSTEM_ERROR;
 	}
 
-	readRet = ReadFile(hComm, receiveChar, sizeof(char), &numRead, &ol);
+	if(WaitCommEvent(hComm, NULL, &ol))
+	{
+		if(!ReadFile(hComm, &receiveChar, 1, &numRead, &ol))
+		{
+			err = GetLastError();
+ 			if (err == 0x3e5)
+ 			{
+				GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+				readRet = TRUE;
+			}
+		}
+		else
+		{
+			readRet = TRUE;
+		}
+	}
+	else
+	{
+		err = GetLastError();
+		if(err == 0x3e5)
+		{
+			GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+		}
+
+		if(!ReadFile(hComm, &receiveChar, 1, &numRead, &ol))
+		{
+			err = GetLastError();
+ 			if (err == 0x3e5)
+ 			{
+				GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+				readRet = TRUE;
+			}
+		}
+		else
+		{
+			readRet = TRUE;
+		}
+	}
 
 	if (readRet) 
 	{
