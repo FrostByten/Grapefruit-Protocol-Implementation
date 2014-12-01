@@ -83,8 +83,6 @@ DWORD WINAPI startComms(LPVOID data)
 		}
 	}
 
-	sendControlChar(ACK);
-
 	return 0;
 }
 
@@ -114,13 +112,11 @@ DWORD WINAPI startRx(LPVOID data)
 		{
 			if (receiveENQ())
 			{
-				printDebugString("HEY!");
 				receiving = true;
 				syncRx = SYN1;
 				stats->incENQReceived();
-
-				//sendControlChar(ACK);
-				//stats->incACKSent();
+				sendControlChar(ACK);
+				stats->incACKSent();
 				//waitForAckResponse();
 			}
 			receiving = false;
@@ -379,6 +375,16 @@ DWORD receivePacket(unsigned char* packet)
 BOOL sendControlChar(char cChar)
 {
 	return (WriteFile(hComm, &cChar, 1, NULL, &ol));
+	/*if(!WriteFile(hComm, &cChar, 1, NULL, &ol))
+	{
+		DWORD err = GetLastError();
+ 		if (err == 0x3e5)
+ 		{
+			GetOverlappedResult(hComm, &ol, NULL, TRUE);
+		}
+		return TRUE;
+	}
+	return TRUE;*/
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -468,7 +474,7 @@ BOOL receiveENQ()
 		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
 		return SYSTEM_ERROR;
 	}
-
+	
 	// Wait for a char to appear
 	if (WaitCommEvent(hComm, &dwCommEvent, &ol))
 	{
@@ -482,7 +488,24 @@ BOOL receiveENQ()
 			}
 		}
 		if(temp == ENQ)
-			ret = TRUE;
+			return TRUE;
+	}
+	else
+	{
+		GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+		// Read a char from the file and check if it's ENQ
+		if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
+		{
+			DWORD err = GetLastError();
+ 			if (err == 0x3e5)
+ 			{
+				GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+			}
+		}
+		if(temp == ENQ)
+			return TRUE;
+		else
+			return FALSE;
 	}
 
 	return ret;
