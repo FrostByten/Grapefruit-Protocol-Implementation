@@ -215,7 +215,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 					PostQuitMessage(0);
 					break;
 				case IDM_SENDTEXTFILE:
-					// TODO: Add a text file to the buffer
+					addTextFile();
 					break;
 				case IDM_EXPORTANALYTICS:
 					saveAnalytics();
@@ -318,6 +318,106 @@ LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	}
 	return(0);
 }
+
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: addTextFile
+--
+-- DATE: December 1, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--
+-- PROGRAMMER: Christofer Klassen
+--
+-- INTERFACE: void addTextFile();
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function adds a text file to the send buffer.
+----------------------------------------------------------------------------------------------------------------------*/
+void addTextFile()
+{
+	ifstream f;
+
+	OPENFILENAME ofn;
+	TCHAR szFile[MAX_PATH];
+
+	// Create the openfilename struct settings
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.lpstrFile = szFile;
+	ofn.lpstrFile[0] = '\0';
+	ofn.hwndOwner = hwnd;
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = TEXT("All files(*.*)\0*.*\0");
+	ofn.nFilterIndex = 1;
+	ofn.lpstrInitialDir = NULL;
+	ofn.lpstrFileTitle = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	// Prompt the user to select a file
+	if (GetOpenFileName(&ofn))
+	{
+		f.open(ofn.lpstrFile);
+	}
+
+	// Check if the file is open
+	if (f.is_open())
+	{
+		string str;
+
+		// Add the contents of the text file to the send buffer
+		do
+		{
+			str.clear();
+		
+			// Read in a line from the file
+			getline(f, str);
+
+			if (str.length() > 0)
+			{
+				char *textbuff = (char*)str.c_str();
+				bool done = FALSE;
+
+				// Add the line to the send buffer
+				for (int i = 0; !done && i < (SEND_BUF_SIZE - 1024); i++)
+				{
+					if (sendBuffer[i] == '\0')
+					{
+						for (int j = 0; !done && j < 1024; j++)
+						{
+							if (textbuff[j] == '\0')
+							{
+								sendBuffer[i] = '\n';
+								done = TRUE;
+							}
+							else
+							{
+								sendBuffer[i] = textbuff[j];
+								i++;
+							}
+						}
+					}
+				}
+			}
+		} while (str.length() > 0);
+
+		printDebugString(sendBuffer);
+
+		f.close();
+
+
+	}
+	else
+	{
+		printDebugString("File not found.");
+	}
+
+}
+
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: refreshScreen
@@ -559,10 +659,11 @@ void fillSendBuffer()
 	{
 		if (sendBuffer[i] == '\0')
 		{
-			for (int j = i; j < 1024; j++)
+			for (int j = 0; j < 1024; j++)
 			{
 				if (textbuff[j] == '\0')
 				{
+					sendBuffer[i] = '\n';
 					SendMessage(hEdit, WM_SETTEXT, 1, '\0');
 					return;
 				}
