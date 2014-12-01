@@ -70,7 +70,7 @@ DWORD WINAPI startComms(LPVOID data)
 				sendControlChar(ENQ);
 				stats->incENQSent();
 				waitForEnqResponse();
-				while(1);
+				//while(1);
 			}
 
 			sending = false;
@@ -225,28 +225,22 @@ void sendData()
 			maxSent = FALSE;
 		int dataSize = constructPacket(packet, maxSent);
 		sendPacket(packet);
-																				printDebugString((char*)packet);
-		char response = receiveGenControlChar(timeouts.timeoutSendPacket);
-		if (response != NULL)
+																				//printDebugString((char*)packet);
+		char response = '\0';
+		response = receiveGenControlChar(timeouts.timeoutSendPacket);
+		if(response == ACK)
 		{
-			if(response == ACK)
-			{
-				stats->incACKReceived();
-				stats->incGoodPacketSent();
-				sent++;
-				syncSend = (syncSend==SYN1)?SYN2:SYN1;
-				popFromBuffer(dataSize);
-			}
-			else
-			{
-				misses++;
-				stats->incNAKReceived();
-				stats->incLostPacketSent();
-			}
+			stats->incACKReceived();
+			stats->incGoodPacketSent();
+			sent++;
+			syncSend = (syncSend==SYN1)?SYN2:SYN1;
+			popFromBuffer(dataSize);
 		}
 		else
 		{
 			misses++;
+			if(response == NAK)
+				stats->incNAKReceived();
 			stats->incLostPacketSent();
 		}
 	}
@@ -313,6 +307,7 @@ DWORD receivePacket(unsigned char* packet)
 	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)timeouts.timeoutSendAck;
 
 	GetSystemTime(&start);
+	GetSystemTime(&now);
 
 	if (!SetCommMask(hComm, EV_RXCHAR))
 	{
@@ -341,7 +336,7 @@ DWORD receivePacket(unsigned char* packet)
 			}
 		}
 
-		if(!ReadFile(hComm, packet + totRead, PACKET_SIZE, &read, &ol));
+		if(!ReadFile(hComm, packet + totRead, PACKET_SIZE, &read, &ol))
 		{
 				GetOverlappedResult(hComm, &ol, &read, TRUE);
 		}
@@ -480,8 +475,7 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 {
 	DWORD numRead;
 	BOOL readRet = FALSE;
-	BOOL ret;
-	char temp;
+	char temp = 'X';
 	DWORD dwCommEvent;
 	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
 	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
@@ -499,6 +493,11 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 		return SYSTEM_ERROR;
 	}
 
+	PurgeComm(hComm, PURGE_RXCLEAR);
+	PurgeComm(hComm, PURGE_TXCLEAR);
+	PurgeComm(hComm, PURGE_TXABORT);
+	PurgeComm(hComm, PURGE_RXABORT);
+
 	if (WaitCommEvent(hComm, &dwCommEvent, &ol))
 	{
 		if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
@@ -509,7 +508,8 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 	else
 	{
 		DWORD err = GetLastError();
- 		if (err == 0x3e5)
+		Sleep(100);
+ 		if (err == ERROR_IO_PENDING)
 		{
 			GetOverlappedResult(hComm, &ol, &numRead, TRUE);
 
@@ -518,17 +518,19 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 				GetOverlappedResult(hComm, &ol, &numRead, TRUE);
 			}
 		}
-		printDebugString("timed out");
 	}
+
+	//char in[2] = {temp, '\0'};
+	//printDebugString(in);
 
 	if(temp == cChar)
 	{
-		printDebugString("got it");
+		//printDebugString("got it");
 		return TRUE;
 	}
 	else
 	{
-		printDebugString("nope");
+		//printDebugString("nope");
 		return FALSE;
 	}
 }
@@ -623,7 +625,6 @@ char receiveGenControlChar(double waitTimeout)
 {
 	DWORD numRead;
 	DWORD dwCommEvent;
-	BOOL readRet;
 	char temp = ' ';
 	HANDLE receiveChar = &temp;
 	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
@@ -654,7 +655,7 @@ char receiveGenControlChar(double waitTimeout)
 		}
 	}
 
-	if(!ReadFile(hComm, receiveChar, sizeof(char), &numRead, &ol));
+	if(!ReadFile(hComm, receiveChar, sizeof(char), &numRead, &ol))
 	{
 		GetOverlappedResult(hComm, &ol, &numRead, TRUE);
 	}

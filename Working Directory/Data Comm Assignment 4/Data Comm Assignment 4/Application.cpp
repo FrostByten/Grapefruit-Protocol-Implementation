@@ -378,6 +378,8 @@ void updateAnalytics()
 	analytics << "ENQ Sent: " << stats->getENQSent() << "\n";
 	analytics << "Bad Packet Received: " << stats->getBadPacketReceived() << "\n";
 	analytics << "Bad Packet Sent: " << stats->getBadPacketSent() << "\n";
+	analytics << "Lost Packet Sent: " << stats->getLostPacketSent() << "\n";
+	analytics << "Lost Packet Received: " << stats->getLostPacketReceived() << "\n";
 
 	drawAnalytics();
 }
