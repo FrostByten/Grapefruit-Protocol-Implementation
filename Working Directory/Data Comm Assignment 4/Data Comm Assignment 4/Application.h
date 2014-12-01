@@ -2,18 +2,18 @@
 #define _IRREGARDLESS
 
 #include <string>
+#include <vector>
 #include <sstream>
 #include <cstdlib>
 #include <fstream>
 #include <time.h>
-#include <vector>
-#include <iterator>
 #include <windows.h>
 
 using std::srand;
 using std::string;
 using std::stringstream;
 using std::ofstream;
+using std::ifstream;
 
 const int ANALYTICS_WIDTH = 200;
 const int SEND_BUF_SIZE = 10240;
@@ -35,8 +35,10 @@ void saveAnalytics();
 void clearString(char* str);
 void printDebugString(char* str);
 void fillSendBuffer();
-void displayReceived();
+void addTextFile();
 void addToTotalMessage();
+void displayReceived();
+
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 

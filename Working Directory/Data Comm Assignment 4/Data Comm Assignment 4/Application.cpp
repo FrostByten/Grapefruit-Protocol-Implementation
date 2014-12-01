@@ -10,6 +10,8 @@
 --					WPARAM wParam, LPARAM lParam);
 --		void clearString(char*);
 --		void printDebugString(char* str);
+--		void addToTotalMessage();
+--		void displayReceived();
 --		
 --
 -- DATE: November 15, 2014
@@ -18,9 +20,11 @@
 --
 -- DESIGNER: Christofer Klassen
 --			 Lewis Scott
+--			 Jeff Bayntun
 --
 -- PROGRAMMER: Christofer Klassen
 --			   Lewis Scott
+--			   Jeff Bayntun
 --
 -- NOTES:
 --
@@ -217,15 +221,13 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 					PostQuitMessage(0);
 					break;
 				case IDM_SENDTEXTFILE:
-					// TODO: Add a text file to the buffer
+					addTextFile();
 					break;
 				case IDM_EXPORTANALYTICS:
 					saveAnalytics();
 					break;
 				case IDC_SEND_BTN:
-					fillSendBuffer();
-					// to remove
-					addToPrintText();				
+					fillSendBuffer();			
 					break;
 			}
 			break;
@@ -324,6 +326,106 @@ LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	return(0);
 }
 
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: addTextFile
+--
+-- DATE: December 1, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Christofer Klassen
+--
+-- PROGRAMMER: Christofer Klassen
+--
+-- INTERFACE: void addTextFile();
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function adds a text file to the send buffer.
+----------------------------------------------------------------------------------------------------------------------*/
+void addTextFile()
+{
+	ifstream f;
+
+	OPENFILENAME ofn;
+	TCHAR szFile[MAX_PATH];
+
+	// Create the openfilename struct settings
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.lpstrFile = szFile;
+	ofn.lpstrFile[0] = '\0';
+	ofn.hwndOwner = hwnd;
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = TEXT("All files(*.*)\0*.*\0");
+	ofn.nFilterIndex = 1;
+	ofn.lpstrInitialDir = NULL;
+	ofn.lpstrFileTitle = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	// Prompt the user to select a file
+	if (GetOpenFileName(&ofn))
+	{
+		f.open(ofn.lpstrFile);
+	}
+
+	// Check if the file is open
+	if (f.is_open())
+	{
+		string str;
+
+		// Add the contents of the text file to the send buffer
+		do
+		{
+			str.clear();
+		
+			// Read in a line from the file
+			getline(f, str);
+
+			if (str.length() > 0)
+			{
+				char *textbuff = (char*)str.c_str();
+				bool done = FALSE;
+
+				// Add the line to the send buffer
+				for (int i = 0; !done && i < (SEND_BUF_SIZE - 1024); i++)
+				{
+					if (sendBuffer[i] == '\0')
+					{
+						for (int j = 0; !done && j < 1024; j++)
+						{
+							if (textbuff[j] == '\0')
+							{
+								sendBuffer[i] = '\n';
+								done = TRUE;
+							}
+							else
+							{
+								sendBuffer[i] = textbuff[j];
+								i++;
+							}
+						}
+					}
+				}
+			}
+		} while (str.length() > 0);
+
+		printDebugString(sendBuffer);
+
+		f.close();
+
+
+	}
+	else
+	{
+		printDebugString("File not found.");
+	}
+
+}
+
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: refreshScreen
 --
@@ -383,6 +485,8 @@ void updateAnalytics()
 	analytics << "ENQ Sent: " << stats->getENQSent() << "\n";
 	analytics << "Bad Packet Received: " << stats->getBadPacketReceived() << "\n";
 	analytics << "Bad Packet Sent: " << stats->getBadPacketSent() << "\n";
+	analytics << "Lost Packet Sent: " << stats->getLostPacketSent() << "\n";
+	analytics << "Lost Packet Received: " << stats->getLostPacketReceived() << "\n";
 
 	drawAnalytics();
 }
@@ -562,10 +666,11 @@ void fillSendBuffer()
 	{
 		if (sendBuffer[i] == '\0')
 		{
-			for (int j = i; j < 1024; j++)
+			for (int j = 0; j < 1024; j++)
 			{
 				if (textbuff[j] == '\0')
 				{
+					sendBuffer[i] = '\n';
 					SendMessage(hEdit, WM_SETTEXT, 1, '\0');
 					return;
 				}
@@ -580,6 +685,24 @@ void fillSendBuffer()
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: displayReceived
+--
+-- DATE: Dec 1, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Jeff Bayntun
+--
+-- PROGRAMMER: Jeff Bayntun
+--
+-- INTERFACE: void displayReceived();
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- If there is new data in the display buffer, printText, it will be displayed to the screen
+----------------------------------------------------------------------------------------------------------------------*/
 void displayReceived()
 {
 	hdc = GetDC(hwnd);
@@ -592,9 +715,28 @@ void displayReceived()
 	}
 
 	ReleaseDC(hwnd, hdc);
-	
+	refreshScreen();
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: addToTotalMessage
+--
+-- DATE: Dec 1, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Jeff Bayntun
+--
+-- PROGRAMMER: Jeff Bayntun
+--
+-- INTERFACE: void addToTotalMessage();
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Adds data from display buffer printText to vector totalMessage, which contains all the messages received so
+-- far.  If there is spaces in text that is greater than one linesize, it will split the message at that space.
+----------------------------------------------------------------------------------------------------------------------*/
 void addToTotalMessage()
 {
 	//string test = "First, buying real estate without an adequate down payment means extreme leverage, which brings added risk. No, houses do not go up forever. Therefore, buying with 5% down and twenty-times leverage means a lowly 10% correction in the market would wipe out all your savings. You’d owe more than the property’s worth. If you don’t think that’s possible, come back this time next year. We’ll talk.\n\nThen there’s the CMHC premium, which is north of 3% of the mortgaged amount for a minimal down payment. On a $500,000 mortgage, the cost is almost $16,000. Most people add this to their mortgage, so it gets amortized and effectively doubled over time. Your property then needs to appreciate an extra $30,000 just to break even. Bummer.\n\nIn short, a big down is good. This woman gets it. But what sense does it make to keep $200,000 in the tangerine guy’s shorts at 1.3%, when the inflation rate is 2.03% and all of the interest is taxable at your marginal rate? And what if house prices in your hood rise by 5% while you’re saving?\nRight. Fail. That money is actually shrinking due to inflation and taxes while you sit on it. Even at double or triple the interest rate, you’re falling further behind. And if you lock the cash into a five-year GIC to boost the return to 2.8% at some godforsaken online Lithuanian steelworkers’ benevolent Manitoba credit union, it’s not available to you should a great house deal materialize in 20 months from now.";
@@ -605,7 +747,6 @@ void addToTotalMessage()
 	//totalMessage.push_back("this is no3");
 
 	int width = analyticsDivider/9;
-
 
 	while( message.length() > width)
 	{
@@ -629,5 +770,4 @@ void addToTotalMessage()
 		totalMessage.push_back(message);
 	}
 	printText[0] = '\0';
-	refreshScreen();
 }
