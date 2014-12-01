@@ -146,7 +146,7 @@ DWORD WINAPI startRx(LPVOID data)
 ----------------------------------------------------------------------------------------------------------------------*/
 void waitForEnqResponse()
 {
-	if (receiveControlChar(ACK, timeouts.timeoutSendAck))
+	if (receiveControlChar(ACK, timeouts.timeoutSendEnq))
 	{
 		stats->incACKReceived();
 		sendData();
@@ -223,8 +223,9 @@ void sendData()
 			maxSent = TRUE;
 		else
 			maxSent = FALSE;
-		int dataSize = 0;//constructPacket(packet, maxSent);
+		int dataSize = constructPacket(packet, maxSent);
 		sendPacket(packet);
+																				printDebugString((char*)packet);
 		char response = receiveGenControlChar(timeouts.timeoutSendPacket);
 		if (response != NULL)
 		{
@@ -285,12 +286,14 @@ BOOL sendPacket(unsigned char* packet)
 -- REVISIONS: (Date and Description)
 --
 -- DESIGNER: Thomas Tallentire
+--				Lewis Scott
 --
 -- PROGRAMMER: Thomas Tallentire
+--				Lewis Scott
 --
 -- INTERFACE: BOOL receivePacket(unsigned char* packet)
 --
--- RETURNS: BOOl, whether or not the packet was received properly.
+-- RETURNS: BOOL, whether or not the packet was received properly.
 --
 -- NOTES:
 -- The function waits for a packet of size defined by the PACKET_SIZE 
@@ -298,6 +301,69 @@ BOOL sendPacket(unsigned char* packet)
 -- if the packet is invalid, 
 ----------------------------------------------------------------------------------------------------------------------*/
 DWORD receivePacket(unsigned char* packet)
+{
+	int totRead = 0;
+	DWORD read = 0;
+	DWORD dwCommEvent;
+	DWORD blank;
+	SYSTEMTIME start;
+	SYSTEMTIME now;
+	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
+	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
+	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)timeouts.timeoutSendAck;
+
+	GetSystemTime(&start);
+
+	if (!SetCommMask(hComm, EV_RXCHAR))
+	{
+		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
+		return SYSTEM_ERROR;
+	}
+
+	if (!SetCommTimeouts(hComm, lpCommTimeouts))
+	{
+		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
+		return SYSTEM_ERROR;
+	}
+
+	while(totRead != PACKET_SIZE && now.wMilliseconds-start.wMilliseconds < timeouts.timeoutSendAck)
+	{
+		if(!WaitCommEvent(hComm, &dwCommEvent, &ol))
+		{
+			DWORD err = GetLastError();
+ 			if (err == 0x3e5)
+			{
+				GetOverlappedResult(hComm, &ol, &blank, TRUE);
+			}
+			else
+			{
+				return TIMEOUT_PACKET;
+			}
+		}
+
+		if(!ReadFile(hComm, packet + totRead, PACKET_SIZE, &read, &ol));
+		{
+				GetOverlappedResult(hComm, &ol, &read, TRUE);
+		}
+		totRead += read;
+		GetSystemTime(&now);
+	}
+
+	if(now.wMilliseconds-start.wMilliseconds < timeouts.timeoutSendAck)
+	{
+		return TIMEOUT_PACKET;
+	}
+	if (validatePacket(packet))
+	{
+		return SUCCESSFUL_PACKET;
+	} 
+	else
+	{
+		return INVALID_PACKET;
+	}
+
+}
+/*DWORD receivePacket(unsigned char* packet)
 {
 	BOOL readRet;
 	HANDLE hData = packet;
@@ -341,20 +407,21 @@ DWORD receivePacket(unsigned char* packet)
 	if (readRet)
 	{
 		ret = SUCCESSFUL_PACKET;
-		/*if (validatePacket(packet))
+		if (validatePacket(packet))
 		{
-			ret = SUCCESSFUL_PACKET;
-		} else
+			return SUCCESSFUL_PACKET;
+		} 
+		else
 		{
-			ret = INVALID_PACKET;
-		}*/
+			return INVALID_PACKET;
+		}
 	} else
 	{
 		ret = SYSTEM_ERROR;
 		printf("Wait error: %d\n", GetLastError()); 
 	}
 	return ret;
-}
+}*/
 
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -426,6 +493,12 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 		return SYSTEM_ERROR;
 	}
 
+	if (!SetCommMask(hComm, EV_RXCHAR))
+	{
+		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
+		return SYSTEM_ERROR;
+	}
+
 	if (WaitCommEvent(hComm, &dwCommEvent, &ol))
 	{
 		if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
@@ -435,18 +508,29 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 	}
 	else
 	{
-		GetOverlappedResult(hComm, &ol, &numRead, TRUE);
-
-		if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
+		DWORD err = GetLastError();
+ 		if (err == 0x3e5)
 		{
 			GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+
+			if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
+			{
+				GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+			}
 		}
+		printDebugString("timed out");
 	}
 
 	if(temp == cChar)
+	{
+		printDebugString("got it");
 		return TRUE;
+	}
 	else
+	{
+		printDebugString("nope");
 		return FALSE;
+	}
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -538,6 +622,7 @@ BOOL receiveENQ()
 char receiveGenControlChar(double waitTimeout)
 {
 	DWORD numRead;
+	DWORD dwCommEvent;
 	BOOL readRet;
 	char temp = ' ';
 	HANDLE receiveChar = &temp;
@@ -555,7 +640,24 @@ char receiveGenControlChar(double waitTimeout)
 		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
 	}
 
-	readRet = ReadFile(hComm, receiveChar, sizeof(char), &numRead, &ol);
+	if (!WaitCommEvent(hComm, &dwCommEvent, &ol))
+	{	
+		DWORD err = GetLastError();
+ 		if (err == 0x3e5)
+		{
+			GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+		}
+		else
+		{
+			printDebugString("timed out");
+			return '\0';
+		}
+	}
+
+	if(!ReadFile(hComm, receiveChar, sizeof(char), &numRead, &ol));
+	{
+		GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+	}
 
 	return (char)receiveChar;
 }
