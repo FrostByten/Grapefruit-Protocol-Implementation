@@ -203,6 +203,7 @@ void pushPacketToDisplayBuffer(unsigned char *pack)
 	}
 
 	printText[in_buff_place] = '\0';
+	addToTotalMessage();
 }
 
 /*------------------------------------------------------------------------------------------------------------------

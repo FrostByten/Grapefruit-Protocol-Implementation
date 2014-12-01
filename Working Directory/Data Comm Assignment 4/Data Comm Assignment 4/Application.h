@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <fstream>
 #include <time.h>
+#include <vector>
+#include <iterator>
 #include <windows.h>
 
 using std::srand;
@@ -33,6 +35,8 @@ void saveAnalytics();
 void clearString(char* str);
 void printDebugString(char* str);
 void fillSendBuffer();
+void displayReceived();
+void addToTotalMessage();
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
