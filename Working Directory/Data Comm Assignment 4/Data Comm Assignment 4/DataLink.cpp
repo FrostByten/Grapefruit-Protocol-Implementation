@@ -98,7 +98,7 @@ DWORD constructPacket( unsigned char* packet, BOOL maxSent )
 -- RETURNS: void
 --
 -- NOTES:
--- This function makes a 32 bit CRC for the message portion ( starting at packet[2] to packet[1020]
+-- This function makes a 32 bit CRC for the message portion ( starting at packet[2] to packet[1020] )
 ----------------------------------------------------------------------------------------------------------------------*/
 void setCRC( unsigned char* packet )
 {
