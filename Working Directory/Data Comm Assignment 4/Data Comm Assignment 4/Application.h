@@ -12,6 +12,7 @@ using std::srand;
 using std::string;
 using std::stringstream;
 using std::ofstream;
+using std::ifstream;
 
 const int ANALYTICS_WIDTH = 200;
 const int SEND_BUF_SIZE = 10240;
@@ -33,6 +34,7 @@ void saveAnalytics();
 void clearString(char* str);
 void printDebugString(char* str);
 void fillSendBuffer();
+void addTextFile();
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
