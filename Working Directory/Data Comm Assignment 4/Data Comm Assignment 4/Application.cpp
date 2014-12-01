@@ -247,18 +247,19 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 				"BUTTON",
 				"Send",
 				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-				470, 328, 120, 24, hwnd, (HMENU)IDC_SEND_BTN,
+				470, 317, 114, 25, hwnd, (HMENU)IDC_SEND_BTN,
 				GetModuleHandle(NULL),NULL);
 
 			hEdit = CreateWindowEx(WS_EX_CLIENTEDGE,
 				"EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
-				2, 328, 468, 25, hwnd, (HMENU)IDC_EDIT_TXT,
+				0, 317, 470, 25, hwnd, (HMENU)IDC_EDIT_TXT,
 				GetModuleHandle(NULL), NULL);
 
 			SendMessage(hEdit, EM_SETLIMITTEXT, 1024, '\0');
 
 			DefEditProc = (WNDPROC)GetWindowLong(hEdit, GWL_WNDPROC);
 			SetWindowLong(hEdit, GWL_WNDPROC, (long)EditTxtProc);
+			SetFocus(hEdit);
 			break;
 
 		case WM_DESTROY:

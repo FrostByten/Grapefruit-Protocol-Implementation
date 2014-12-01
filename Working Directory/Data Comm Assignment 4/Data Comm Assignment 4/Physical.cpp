@@ -146,7 +146,7 @@ DWORD WINAPI startRx(LPVOID data)
 ----------------------------------------------------------------------------------------------------------------------*/
 void waitForEnqResponse()
 {
-	if (receiveControlChar(ACK, timeouts.timeoutSendEnq))
+	if (receiveControlChar(ACK, timeouts.timeoutSendAck))
 	{
 		stats->incACKReceived();
 		sendData();
@@ -412,19 +412,13 @@ BOOL sendControlChar(char cChar)
 BOOL receiveControlChar(char cChar, double waitTimeout)
 {
 	DWORD numRead;
-	DWORD err;
 	BOOL readRet = FALSE;
 	BOOL ret;
-	char receiveChar = '\0';
+	char temp;
+	DWORD dwCommEvent;
 	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
 	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
 	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)waitTimeout;
-
-	if (!SetCommMask(hComm, EV_RXCHAR))
-	{
-		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
-		return SYSTEM_ERROR;
-	}
 
 	if (!SetCommTimeouts(hComm, lpCommTimeouts))
 	{
@@ -432,55 +426,27 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 		return SYSTEM_ERROR;
 	}
 
-	if(WaitCommEvent(hComm, NULL, &ol))
+	if (WaitCommEvent(hComm, &dwCommEvent, &ol))
 	{
-		if(!ReadFile(hComm, &receiveChar, 1, &numRead, &ol))
-		{
-			err = GetLastError();
- 			if (err == 0x3e5)
- 			{
-				GetOverlappedResult(hComm, &ol, &numRead, TRUE);
-				readRet = TRUE;
-			}
-		}
-		else
-		{
-			readRet = TRUE;
-		}
-	}
-	else
-	{
-		err = GetLastError();
-		if(err == 0x3e5)
+		if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
 		{
 			GetOverlappedResult(hComm, &ol, &numRead, TRUE);
 		}
-
-		if(!ReadFile(hComm, &receiveChar, 1, &numRead, &ol))
-		{
-			err = GetLastError();
- 			if (err == 0x3e5)
- 			{
-				GetOverlappedResult(hComm, &ol, &numRead, TRUE);
-				readRet = TRUE;
-			}
-		}
-		else
-		{
-			readRet = TRUE;
-		}
-	}
-
-	if (readRet) 
-	{
-		if ((char)receiveChar == cChar)
-			ret = TRUE;
-		else
-			ret = FALSE;
 	}
 	else
-		ret = FALSE;
-	return ret;
+	{
+		GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+
+		if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
+		{
+			GetOverlappedResult(hComm, &ol, &numRead, TRUE);
+		}
+	}
+
+	if(temp == cChar)
+		return TRUE;
+	else
+		return FALSE;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
