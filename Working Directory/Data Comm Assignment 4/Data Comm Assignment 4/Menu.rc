@@ -11,4 +11,8 @@ MENU MENU
 	{
 		MENUITEM "&Send Text File", IDM_SENDTEXTFILE
 	}
+	POPUP "&Export"
+	{
+		MENUITEM "&Export Analytics", IDM_EXPORTANALYTICS
+	}
 }

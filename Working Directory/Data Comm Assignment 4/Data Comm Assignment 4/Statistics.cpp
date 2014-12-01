@@ -88,21 +88,41 @@ int Statistics::getLostPacketSent()
 
 double Statistics::getSentGoodPacketPercent()
 {
+	if (packetSentTotal == 0)
+	{
+		return 0;
+	}
+
 	return double(packetSentGood) / packetSentTotal;
 }
 
 double Statistics::getSentBadPacketPercent()
 {
+	if (packetSentTotal == 0)
+	{
+		return 0;
+	}
+
 	return double(packetSentBad) / packetSentTotal;
 }
 
 double Statistics::getReceivedGoodPacketPercent()
 {
+	if (packetReceivedTotal == 0)
+	{
+		return 0;
+	}
+
 	return double(packetReceivedGood) / packetReceivedTotal;
 }
 
 double Statistics::getReceivedBadPacketPercent()
 {
+	if (packetReceivedTotal == 0)
+	{
+		return 0;
+	}
+
 	return double(packetReceivedBad) / packetReceivedTotal;
 }
 
@@ -213,11 +233,21 @@ void Statistics::addPacketSentSize(char* packetData)
 
 double Statistics::getAvgPacketReceivedSize()
 {
+	if (packetReceivedTotal == 0)
+	{
+		return 0;
+	}
+
 	return double(totalPacketReceivedSize) / packetReceivedTotal;
 }
 
 double Statistics::getAvgPacketSentSize()
 {
+	if (packetSentTotal == 0)
+	{
+		return 0;
+	}
+
 	return double(totalPacketSentSize) / packetSentTotal;
 }
 

@@ -29,7 +29,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-#define CONNECT_ON_START
+//#define CONNECT_ON_START
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
@@ -216,6 +216,9 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 					break;
 				case IDM_SENDTEXTFILE:
 					// TODO: Add a text file to the buffer
+					break;
+				case IDM_EXPORTANALYTICS:
+					saveAnalytics();
 					break;
 				case IDC_SEND_BTN:
 					fillSendBuffer();
@@ -453,8 +456,21 @@ void saveAnalytics()
 	file << "NAK Sent: " << stats->getNAKSent() << "\n";
 	file << "ENQ Received: " << stats->getENQReceived() << "\n";
 	file << "ENQ Sent: " << stats->getENQSent() << "\n";
+	file << "\n";
 	file << "Bad Packet Received: " << stats->getBadPacketReceived() << "\n";
 	file << "Bad Packet Sent: " << stats->getBadPacketSent() << "\n";
+	file << "Good Packet Received: " << stats->getGoodPacketReceived() << "\n";
+	file << "Good Packet Sent: " << stats->getGoodPacketSent() << "\n";
+	file << "Lost Packet Received: " << stats->getLostPacketReceived() << "\n";
+	file << "Lost Packet Sent: " << stats->getLostPacketSent() << "\n";
+	file << "\n";
+	file << "Bad Received Percent: " << stats->getReceivedBadPacketPercent() << "\n";
+	file << "Good Received Percent: " << stats->getReceivedGoodPacketPercent() << "\n";
+	file << "Bad Sent Percent: " << stats->getSentBadPacketPercent() << "\n";
+	file << "Good Sent Percent: " << stats->getSentGoodPacketPercent() << "\n";
+	file << "\n";
+	file << "Average Packet Sent Size: " << stats->getAvgPacketSentSize() << "\n";
+	file << "Average Packet Received Size: " << stats->getAvgPacketReceivedSize() << "\n";
 
 	file.close();
 }
