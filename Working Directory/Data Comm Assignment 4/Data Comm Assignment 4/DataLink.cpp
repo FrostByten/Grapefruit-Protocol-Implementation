@@ -102,7 +102,22 @@ DWORD constructPacket( unsigned char* packet, BOOL maxSent )
 ----------------------------------------------------------------------------------------------------------------------*/
 void setCRC( unsigned char* packet )
 {
+	stringstream ss;
+	char* test = new char[1024];
+	string s;
+	
 	crc c = crcFast( &packet[2], MAX_DATA );
+
+	/*
+	ss << "CRC value " << c;
+	s.assign(ss.str());
+	int i;
+	for (i = 0; i < s.length(); i++)
+		{
+		test[i] = s[i];
+		}
+	test[i] = '\0';
+	printDebugString(test); */
 	
 	unsigned char* crcArray = new unsigned char[4];
 	crcArray = reinterpret_cast<unsigned char *>(&c);	
@@ -111,6 +126,10 @@ void setCRC( unsigned char* packet )
 	{
 		packet[ MAX_DATA + 2 + i ] = crcArray[i];
 	}
+
+	crc* cc = reinterpret_cast<crc *>(&packet[MAX_DATA + 2]);
+	if (*cc == c)
+		printDebugString("CRC is the same");
 
 	return;
 }
@@ -174,9 +193,43 @@ std::string trimResponse( unsigned char* response )
 ----------------------------------------------------------------------------------------------------------------------*/
 bool validatePacket( unsigned char* response )
 {
+	//printDebugString("if this shows... it is doing crc stuff!");
+
+	/* char* yy = new char[2048];
+	int f;
+	for (f = 0; (f < MAX_DATA + 2) && response[f+2] != ETX; f++)
+	{
+		yy[f] = (char)response[f+2];
+	}
+	yy[f] = '\0';
+	printDebugString(yy); */
+
+	if (response[0] == EOT)
+		printDebugString("Found EOT");
+	else if (response[0] == ETB)
+		printDebugString("Found ETB");
+	else if (response[0] == SYN1 || response[0] == SYN2 )
+		printDebugString("Found SYN");
+	else
+		printDebugString((char*)response);
+
 	if (response[1] != syncRx)
 		return false;
 	crc* c = reinterpret_cast<crc *>( &response[ MAX_DATA + 2 ] );
+
+	stringstream ss;
+	ss << "CRC received " << *c << "  CRC calculated " << crcFast(&response[2], MAX_DATA);
+
+	string sx = ss.str();
+	char* xx = new char[2048];
+	int i;
+	for (i = 0; i < sx.size(); i++)
+	{
+		xx[i] = sx[i];
+	}
+	xx[i] = '\0';
+
+	printDebugString(xx);
 	
 	return *c == crcFast( &response[2], MAX_DATA );
 }

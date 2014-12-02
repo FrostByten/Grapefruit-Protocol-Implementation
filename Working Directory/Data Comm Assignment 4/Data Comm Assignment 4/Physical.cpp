@@ -321,7 +321,12 @@ DWORD receivePacket(unsigned char* packet)
 		return SYSTEM_ERROR;
 	}
 
-	while(totRead != PACKET_SIZE && now.wMilliseconds-start.wMilliseconds < timeouts.timeoutSendAck)
+	PurgeComm(hComm, PURGE_RXCLEAR);
+	PurgeComm(hComm, PURGE_TXCLEAR);
+	PurgeComm(hComm, PURGE_TXABORT);
+	PurgeComm(hComm, PURGE_RXABORT);
+
+	while(totRead != PACKET_SIZE/* && now.wMilliseconds-start.wMilliseconds < timeouts.timeoutSendAck*/)
 	{
 		if(!WaitCommEvent(hComm, &dwCommEvent, &ol))
 		{
@@ -332,6 +337,7 @@ DWORD receivePacket(unsigned char* packet)
 			}
 			else
 			{
+				printDebugString("Timeout packet");
 				return TIMEOUT_PACKET;
 			}
 		}
@@ -343,17 +349,20 @@ DWORD receivePacket(unsigned char* packet)
 		totRead += read;
 		GetSystemTime(&now);
 	}
-
-	if(now.wMilliseconds-start.wMilliseconds < timeouts.timeoutSendAck)
+	
+/*	if(now.wMilliseconds-start.wMilliseconds < timeouts.timeoutSendAck)
 	{
+		printDebugString("Timeout packet2");
 		return TIMEOUT_PACKET;
-	}
+	} */
 	if (validatePacket(packet))
 	{
+		printDebugString("Successful Packet");
 		return SUCCESSFUL_PACKET;
 	} 
 	else
 	{
+		printDebugString("invalid Packet");
 		return INVALID_PACKET;
 	}
 
