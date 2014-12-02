@@ -317,6 +317,22 @@ LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				fillSendBuffer();
 				return(0);
 			}
+			else if (wParam == VK_SPACE)
+			{
+				int ndx = 0;
+				for (int i = 0; i < 10; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						printText[ndx] = 'A';
+						ndx++;
+					}
+					printText[ndx] = ' ';
+					ndx++;
+				}
+
+				displayReceived();
+			}
 			else return((LRESULT)CallWindowProc((WNDPROC)DefEditProc, hDlg, message, wParam, lParam));
 			break;
 		default:
@@ -715,7 +731,7 @@ void displayReceived()
 	}
 
 	ReleaseDC(hwnd, hdc);
-	refreshScreen();
+	//refreshScreen();
 }
 
 /*------------------------------------------------------------------------------------------------------------------
