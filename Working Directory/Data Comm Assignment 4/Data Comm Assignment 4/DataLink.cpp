@@ -128,8 +128,6 @@ void setCRC( unsigned char* packet )
 	}
 
 	crc* cc = reinterpret_cast<crc *>(&packet[MAX_DATA + 2]);
-	if (*cc == c)
-		printDebugString("CRC is the same");
 
 	return;
 }

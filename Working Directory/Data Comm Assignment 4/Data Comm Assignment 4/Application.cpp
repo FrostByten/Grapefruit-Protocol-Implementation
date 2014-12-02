@@ -33,7 +33,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-//#define CONNECT_ON_START
+#define CONNECT_ON_START
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
@@ -242,15 +242,8 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			break;
 
 		case WM_PAINT:		// Process a repaint message
-			// Update the divider location
-			RECT rect;
-			GetWindowRect(hwnd, &rect);
-			oldDivider = analyticsDivider;
-			analyticsDivider = rect.right - rect.left - ANALYTICS_WIDTH;
-
 			hdc = BeginPaint (hwnd, &paintstruct); // Acquire DC
 			
-		
 			EndPaint (hwnd, &paintstruct); // Release DC
 
 			// Print analytics
@@ -259,6 +252,11 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			// Print received data
 			displayReceived();
 
+			break;
+
+		case WM_SIZE:
+			updateWrapLength();
+			refreshScreen();
 			break;
 
 		case WM_CREATE:
@@ -326,7 +324,7 @@ LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				fillSendBuffer();
 				return(0);
 			}
-			else if (wParam == VK_SPACE)
+			else if (wParam == VK_ESCAPE)
 			{
 				int ndx = 0;
 				for (int i = 0; i < 10; i++)
@@ -731,12 +729,6 @@ void fillSendBuffer()
 ----------------------------------------------------------------------------------------------------------------------*/
 void displayReceived()
 {
-	// Update display screen width if necessary
-	if (analyticsDivider != oldDivider)
-	{
-		updateWrapLength();
-	}
-
 	int width = analyticsDivider / 9;
 
 	hdc = GetDC(hwnd);
@@ -772,15 +764,49 @@ void displayReceived()
 ----------------------------------------------------------------------------------------------------------------------*/
 void updateWrapLength()
 {
-	int width = analyticsDivider / 9;
+	// Update the divider location
+	RECT rect;
+	GetWindowRect(hwnd, &rect);
+
+	// Update the divider position
+	analyticsDivider = rect.right - rect.left - ANALYTICS_WIDTH;
 
 	// Make a copy of the vector
-	vector<string> temp(totalMessage);
+	string message;
+	
+	// Print the totalMessage pieces into one long string
+	for (vector<string>::iterator it = totalMessage.begin(); it != totalMessage.end(); it++)
+	{
+		message += *it;
+		message += ' ';
+	}
 
 	totalMessage.clear();
 
 	// Re-order the strings within the vector based on the new size
-	
+	int width = analyticsDivider / 9;
+
+	while (message.length() > width)
+	{
+		string temp = message.substr(0, width);
+		int spaceLoc;
+		if ((spaceLoc = temp.rfind(' ')) != string::npos)
+		{
+			totalMessage.push_back(temp.substr(0, spaceLoc));
+			// erase message and space
+			message = message.erase(0, spaceLoc + 1);
+		}
+		else
+		{
+			totalMessage.push_back(temp);
+			message = message.erase(0, width);
+		}
+	}
+
+	if (message.length() != 0)
+	{
+		totalMessage.push_back(message);
+	}
 
 	return;
 }
