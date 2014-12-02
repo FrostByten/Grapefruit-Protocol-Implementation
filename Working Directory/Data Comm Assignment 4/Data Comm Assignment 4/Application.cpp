@@ -58,6 +58,7 @@ std::vector<string> totalMessage;
 
 int X = 0, Y = 0; // Current coordinates
 int analyticsDivider = 400;
+int oldDivider = 400;
 
 stringstream analytics;
 
@@ -241,6 +242,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 			// Update the divider location
 			RECT rect;
 			GetWindowRect(hwnd, &rect);
+			oldDivider = analyticsDivider;
 			analyticsDivider = rect.right - rect.left - ANALYTICS_WIDTH;
 
 			hdc = BeginPaint (hwnd, &paintstruct); // Acquire DC
@@ -250,6 +252,9 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 
 			// Print analytics
 			updateAnalytics();
+
+			// Print received data
+			displayReceived();
 
 			break;
 
@@ -722,6 +727,14 @@ void fillSendBuffer()
 ----------------------------------------------------------------------------------------------------------------------*/
 void displayReceived()
 {
+	// Update display screen width if necessary
+	if (analyticsDivider != oldDivider)
+	{
+		updateWrapLength();
+	}
+
+	int width = analyticsDivider / 9;
+
 	hdc = GetDC(hwnd);
 	if( strlen(printText) != 0 )
 		addToTotalMessage();
@@ -734,6 +747,40 @@ void displayReceived()
 	ReleaseDC(hwnd, hdc);
 	//refreshScreen();
 }
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: updateWrapLength
+--
+-- DATE: Dec 1, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Chris Klassen
+--
+-- PROGRAMMER: Chris Klassen
+--
+-- INTERFACE: void updateWrapLength();
+--
+-- RETURNS: void
+--
+-- NOTES:
+--		If the width of the screen has changed, re-organize the total message vector
+----------------------------------------------------------------------------------------------------------------------*/
+void updateWrapLength()
+{
+	int width = analyticsDivider / 9;
+
+	// Make a copy of the vector
+	vector<string> temp(totalMessage);
+
+	totalMessage.clear();
+
+	// Re-order the strings within the vector based on the new size
+	
+
+	return;
+}
+
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: addToTotalMessage

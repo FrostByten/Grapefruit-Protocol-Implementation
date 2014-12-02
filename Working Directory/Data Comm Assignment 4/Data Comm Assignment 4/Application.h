@@ -10,6 +10,7 @@
 #include <windows.h>
 
 using std::srand;
+using std::vector;
 using std::string;
 using std::stringstream;
 using std::ofstream;
@@ -36,6 +37,7 @@ void clearString(char* str);
 void printDebugString(char* str);
 void fillSendBuffer();
 void addTextFile();
+void updateWrapLength();
 void addToTotalMessage();
 void displayReceived();
 
