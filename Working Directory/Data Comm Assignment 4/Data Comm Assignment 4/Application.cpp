@@ -131,6 +131,8 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 		}
 	#endif
 
+	// set up crc table
+	crcInit();
 	// Calculate timeouts
 	calculateTimeouts(&timeouts);
 
@@ -248,7 +250,6 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 
 			// Print analytics
 			updateAnalytics();
-			displayReceived();
 
 			break;
 
