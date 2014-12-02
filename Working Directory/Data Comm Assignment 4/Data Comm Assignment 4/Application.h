@@ -16,7 +16,7 @@ using std::stringstream;
 using std::ofstream;
 using std::ifstream;
 
-const int ANALYTICS_WIDTH = 200;
+const int ANALYTICS_WIDTH = 220;
 const int SEND_BUF_SIZE = 10240;
 
 #define EOT 0x04

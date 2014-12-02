@@ -137,6 +137,9 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 	// Calculate timeouts
 	calculateTimeouts(&timeouts);
 
+	stringstream msg;
+	msg << timeouts.timeoutSendEnq;
+
 	// Create initial analytic values
 	updateAnalytics();
 
@@ -509,6 +512,7 @@ void updateAnalytics()
 	analytics << "Bad Packet Sent: " << stats->getBadPacketSent() << "\n";
 	analytics << "Lost Packet Sent: " << stats->getLostPacketSent() << "\n";
 	analytics << "Lost Packet Received: " << stats->getLostPacketReceived() << "\n";
+	analytics << "Percent Bad Received: " << stats->getReceivedBadPacketPercent() << "\n";
 
 	drawAnalytics();
 }
