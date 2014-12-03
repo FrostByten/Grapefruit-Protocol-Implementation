@@ -1,0 +1,7 @@
+#define IDM_HELP			100
+#define IDM_QUIT			101
+#define IDM_SENDTEXTFILE	102
+#define IDC_SEND_BTN		103
+#define IDC_EDIT_TXT		104
+#define IDM_EXPORTANALYTICS	105
+#define IDM_CLEARDATA		106
