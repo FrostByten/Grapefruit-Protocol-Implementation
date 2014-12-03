@@ -7,9 +7,10 @@ MENU MENU
 		MENUITEM "&Help", IDM_HELP
 		MENUITEM "&Quit", IDM_QUIT
 	}
-	POPUP "&Send"
+	POPUP "&Transmission"
 	{
 		MENUITEM "&Send Text File", IDM_SENDTEXTFILE
+		MENUITEM "&Clear Data", IDM_CLEARDATA
 	}
 	POPUP "&Export"
 	{

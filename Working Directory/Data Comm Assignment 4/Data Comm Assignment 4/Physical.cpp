@@ -639,3 +639,11 @@ char receiveGenControlChar(double waitTimeout)
 
 	return receivechar[0];
 }
+
+BOOL getTransmitting()
+{
+	if (sending || receiving)
+		return TRUE;
+
+	return FALSE;
+}
