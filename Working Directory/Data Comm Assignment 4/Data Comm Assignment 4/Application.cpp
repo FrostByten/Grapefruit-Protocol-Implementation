@@ -60,6 +60,13 @@ int X = 0, Y = 0; // Current coordinates
 int analyticsDivider = 400;
 int oldDivider = 400;
 
+// Edit text positioning
+int editButtonWidth = 0;
+
+int editTextWidth = 0;
+int editTextHeight = 0;
+
+
 stringstream analytics;
 
 // Timeouts
@@ -769,11 +776,22 @@ void displayReceived()
 ----------------------------------------------------------------------------------------------------------------------*/
 void updateWrapLength()
 {
-	// Update the divider location
 	RECT rect;
-	GetWindowRect(hwnd, &rect);
+	GetClientRect(hwnd, &rect);
 
-	// Update the divider position
+	//Update the size of the edit box
+	editButtonWidth = 114;
+
+	editTextWidth = rect.right - rect.left - editButtonWidth;
+	editTextHeight = 25;
+
+	//MoveWindow(hEdit, 0, 0, 30, 30, 1);
+	MoveWindow(hEdit, 0, rect.top + (rect.bottom - rect.top) - 25, editTextWidth, editTextHeight, 1);
+		ShowWindow(hEdit, SW_SHOWNORMAL);
+	MoveWindow(hWndButton, editTextWidth, rect.top + (rect.bottom - rect.top) - 25, editButtonWidth, editTextHeight, 1);
+		ShowWindow(hWndButton, SW_SHOWNORMAL);
+
+		// Update the divider position
 	analyticsDivider = rect.right - rect.left - ANALYTICS_WIDTH;
 
 	// Make a copy of the vector
