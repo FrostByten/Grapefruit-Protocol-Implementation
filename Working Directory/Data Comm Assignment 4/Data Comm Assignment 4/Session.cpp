@@ -22,7 +22,7 @@
 #include <windows.h>
 #include "Session.h"
 
-int in_buff_place = 0;
+int in_buff_place;
 
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -73,9 +73,9 @@ void closePort(HANDLE hComm)
 void calculateTimeouts( Timeouts* timeouts) {
 	// Calculate each timeout in milliseconds so that they are compatible with
 	// the WaitForSingleObject function
-	timeouts->timeoutSendEnq = ( ( double(ENQ_TIMEOUT_SIZE) ) /  BYTE_RATE ) * MILLISECONDS;
-	timeouts->timeoutSendPacket = ( ( double(PACKET_TIMEOUT_SIZE) ) / BYTE_RATE ) * MILLISECONDS;
-	timeouts->timeoutSendAck = timeouts->timeoutSendPacket * MAX_MISS;
+	timeouts->timeoutSendEnq = ( ( ( double(ENQ_TIMEOUT_SIZE) ) /  BYTE_RATE ) * MILLISECONDS);
+	timeouts->timeoutSendPacket = ( ( ( double(PACKET_TIMEOUT_SIZE) ) / BYTE_RATE ) * MILLISECONDS);
+	timeouts->timeoutSendAck = ( timeouts->timeoutSendPacket * MAX_MISS);
 	
 	// Calculate min and max reset values in bits
 	timeouts->resetMin = BYTE_SIZE;
@@ -180,7 +180,7 @@ DWORD getBufferSize()
 --
 -- DESIGNER: Lewis Scott
 --
--- PROGRAMMER: Lewis Scott
+-- PROGRAMMER: Lewis Scott & Jeff Bayntun
 --
 -- INTERFACE: void pushPacketToDisplayBuffer(unsigned char *pack)
 --
@@ -191,6 +191,7 @@ DWORD getBufferSize()
 ----------------------------------------------------------------------------------------------------------------------*/
 void pushPacketToDisplayBuffer(unsigned char *pack)
 {
+	in_buff_place = 0;
 	for (int i = DATA_START; i < DATA_END; i++)
 	{
 		if (pack[i] == ETX)

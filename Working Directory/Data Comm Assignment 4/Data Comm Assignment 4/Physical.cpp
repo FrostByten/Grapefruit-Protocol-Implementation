@@ -63,21 +63,30 @@ DWORD WINAPI startComms(LPVOID data)
 	{
 		if(!receiving)
 		{
+			syncSend = SYN1;
 			if(isBufferNotEmpty())
 			{
+				TerminateThread(hRxThrd, 0);
 				sending = true;
-				syncSend = SYN1;
 
 				sendControlChar(ENQ);
 				stats->incENQSent();
 				waitForEnqResponse();
+				hRxThrd = CreateThread(NULL, 0, startRx, NULL, 0, NULL);
+				if (!hRxThrd)
+				{
+					MessageBox(NULL, TEXT("Error creating Rx thread."), TEXT("Error"), MB_ICONWARNING | MB_OK);
+					CloseHandle(hRxThrd);
+					hRxThrd = NULL;
+					PostQuitMessage(0);
+				}
 			}
 
 			sending = false;
-
+			
 			if (waitForReset)
 			{
-				Sleep(getResetTime(&timeouts));
+				Sleep(getResetTime(&timeouts)+100);
 				waitForReset = false;
 			}
 		}
@@ -194,6 +203,7 @@ void waitForAckResponse()
 				break;
 			case INVALID_PACKET:
 				stats->incBadPacketReceived();
+				stats->incNAKSent();
 				sendControlChar(NAK);
 				break;
 			case TIMEOUT_PACKET:
@@ -247,15 +257,20 @@ void sendData()
 			stats->incACKReceived();
 			stats->incGoodPacketSent();
 			sent++;
-			syncSend = (syncSend==SYN1)?SYN2:SYN1;
 			popFromBuffer(dataSize);
 		}
 		else
 		{
 			misses++;
-			if(response == NAK)
+			if (response == NAK)
+			{
+				stats->incBadPacketSent();
 				stats->incNAKReceived();
-			stats->incLostPacketSent();
+			}
+			else
+			{
+				stats->incLostPacketSent();
+			}
 		}
 	}
 
@@ -317,6 +332,7 @@ BOOL sendPacket(unsigned char* packet)
 ----------------------------------------------------------------------------------------------------------------------*/
 DWORD receivePacket(unsigned char* packet)
 {
+	OutputDebugString("Enter receivePacket\n");
 	int totRead = 0;
 	DWORD read = 0;
 	DWORD dwCommEvent;
@@ -328,31 +344,28 @@ DWORD receivePacket(unsigned char* packet)
 	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
 	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)timeouts.timeoutSendAck;
 
-	
-
-	if (!SetCommMask(hComm, EV_RXCHAR))
-	{
-		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
-		return SYSTEM_ERROR;
-	}
-
-	if (!SetCommTimeouts(hComm, lpCommTimeouts))
-	{
-		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
-		return SYSTEM_ERROR;
-	}
-
 	PurgeComm(hComm, PURGE_RXCLEAR);
 	PurgeComm(hComm, PURGE_TXCLEAR);
 	PurgeComm(hComm, PURGE_TXABORT);
 	PurgeComm(hComm, PURGE_RXABORT);
+
+	if (!SetCommMask(hComm, EV_RXCHAR))
+	{
+		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
+	}
+
+	/*if (!SetCommTimeouts(hComm, lpCommTimeouts))
+	{
+		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
+		return SYSTEM_ERROR;
+	}*/
 
 	GetSystemTime(&start);
 	GetSystemTime(&now);
 
 	while (totRead < PACKET_SIZE)
 	{
-
+		OutputDebugString("Packet not full\n");
 		if (!WaitCommEvent(hComm, &dwCommEvent, &ol))
 		{
 			DWORD err = GetLastError();
@@ -362,22 +375,24 @@ DWORD receivePacket(unsigned char* packet)
 			}
 			else
 			{
+				OutputDebugString("Not IO pending");
 				return TIMEOUT_PACKET;
 			}
 		}
 		if (dwCommEvent != EV_RXCHAR)
 			return SYSTEM_ERROR;
-		if (!ReadFile(hComm, packet + totRead, 1024, &read, &ol))
+		if (!ReadFile(hComm, packet + totRead, PACKET_SIZE, &read, &ol))
 		{
 			GetOverlappedResult(hComm, &ol, &read, TRUE);
 		}
 		totRead += read;
 
 		GetSystemTime(&now);
-		/*if (now.wMilliseconds - start.wMilliseconds < timeouts.timeoutSendAck)
+		if ((now.wMilliseconds - start.wMilliseconds) > timeouts.timeoutSendAck)
 		{
+			OutputDebugString("mil - mil\n");
 			return TIMEOUT_PACKET;
-		}*/
+		}
 	}
 
 	if (validatePacket(packet))
@@ -450,27 +465,29 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 	char temp = 'X';
 	DWORD dwCommEvent;
 	DWORD dwMaskEvent;
+	SYSTEMTIME start;
+	SYSTEMTIME now;
 	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
 	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
 	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)waitTimeout;
-
-	if (!SetCommTimeouts(hComm, lpCommTimeouts))
-	{
-		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
-		return SYSTEM_ERROR;
-	}
-
-	if (!SetCommMask(hComm, EV_RXCHAR))
-	{
-		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
-		return SYSTEM_ERROR;
-	}
 
 	PurgeComm(hComm, PURGE_RXCLEAR);
 	PurgeComm(hComm, PURGE_TXCLEAR);
 	PurgeComm(hComm, PURGE_TXABORT);
 	PurgeComm(hComm, PURGE_RXABORT);
 
+	if (!SetCommMask(hComm, EV_RXCHAR))
+	{
+		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
+	}
+
+	/*if (!SetCommTimeouts(hComm, lpCommTimeouts))
+	{
+		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
+		return SYSTEM_ERROR;
+	}*/
+
+	GetSystemTime(&start);
 	if (WaitCommEvent(hComm, &dwCommEvent, &ol))
 	{
 		if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
@@ -481,7 +498,6 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 	else
 	{
 		DWORD err = GetLastError();
-		Sleep(100);
  		if (err == ERROR_IO_PENDING)
 		{
 			GetOverlappedResult(hComm, &ol, &numRead, TRUE);
@@ -492,6 +508,12 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 				GetOverlappedResult(hComm, &ol, &numRead, TRUE);
 			}
 		}
+	}
+
+	GetSystemTime(&now);
+	if ((now.wMilliseconds - start.wMilliseconds) > timeouts.timeoutSendAck)
+	{
+		return TIMEOUT_PACKET;
 	}
 
 	//char in[2] = {temp, '\0'};
@@ -603,6 +625,8 @@ char receiveGenControlChar(double waitTimeout)
 	DWORD dwCommEvent;
 	DWORD dwMaskEvent;
 	char receivechar[2] = { '\0', '\0' };
+	SYSTEMTIME start;
+	SYSTEMTIME now;
 	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
 	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
 	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)waitTimeout;
@@ -612,11 +636,11 @@ char receiveGenControlChar(double waitTimeout)
 		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
 	}
 
-	if (!SetCommTimeouts(hComm, lpCommTimeouts))
+	/*if (!SetCommTimeouts(hComm, lpCommTimeouts))
 	{
 		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
-	}
-
+	}*/
+	GetSystemTime(&start);
 	if (!WaitCommEvent(hComm, &dwCommEvent, &ol))
 	{	
 		DWORD err = GetLastError();
@@ -637,13 +661,11 @@ char receiveGenControlChar(double waitTimeout)
 		GetOverlappedResult(hComm, &ol, &numRead, TRUE);
 	}
 
+	GetSystemTime(&now);
+	if ((now.wMilliseconds - start.wMilliseconds) > timeouts.timeoutSendAck)
+	{
+		return TIMEOUT_PACKET;
+	}
+
 	return receivechar[0];
-}
-
-BOOL getTransmitting()
-{
-	if (sending || receiving)
-		return TRUE;
-
-	return FALSE;
 }

@@ -5,12 +5,12 @@ MENU MENU
 	POPUP "&File"
 	{
 		MENUITEM "&Help", IDM_HELP
-		MENUITEM "&Quit", IDM_QUIT
+			MENUITEM "&Quit", IDM_QUIT
 	}
 	POPUP "&Transmission"
 	{
 		MENUITEM "&Send Text File", IDM_SENDTEXTFILE
-		MENUITEM "&Clear Data", IDM_CLEARDATA
+			MENUITEM "&Clear Data", IDM_CLEARDATA
 	}
 	POPUP "&Export"
 	{

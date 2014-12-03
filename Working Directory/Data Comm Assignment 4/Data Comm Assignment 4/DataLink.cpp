@@ -102,7 +102,7 @@ DWORD constructPacket( unsigned char* packet, BOOL maxSent )
 void setCRC( unsigned char* packet )
 {
 	stringstream ss;
-	char* test = new char[1024];
+	char* test = new char[PACKET_SIZE];
 	string s;
 	
 	crc c = crcFast( &packet[2], MAX_DATA );
@@ -195,34 +195,10 @@ std::string trimResponse( unsigned char* response )
 ----------------------------------------------------------------------------------------------------------------------*/
 bool validatePacket( unsigned char* response )
 {
-	//printDebugString("if this shows... it is doing crc stuff!");
-
-	/* char* yy = new char[2048];
-	int f;
-	for (f = 0; (f < MAX_DATA + 2) && response[f+2] != ETX; f++)
-	{
-		yy[f] = (char)response[f+2];
-	}
-	yy[f] = '\0';
-	printDebugString(yy); */
 
 	if (response[1] != syncRx)
 		return false;
 	crc* c = reinterpret_cast<crc *>( &response[ MAX_DATA + 2 ] );
-
-	stringstream ss;
-	ss << "CRC received " << *c << "  CRC calculated " << crcFast(&response[2], MAX_DATA);
-
-	/*string sx = ss.str();
-	char* xx = new char[2048];
-	int i;
-	for (i = 0; i < sx.size(); i++)
-	{
-		xx[i] = sx[i];
-	}
-	xx[i] = '\0';*/
-
-	//printDebugString((char*)ss.str().c_str());
 	
 	return *c == crcFast( &response[2], MAX_DATA );
 }

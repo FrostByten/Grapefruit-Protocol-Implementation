@@ -12,7 +12,7 @@
 --		void printDebugString(char* str);
 --		void addToTotalMessage();
 --		void displayReceived();
---		
+--
 --
 -- DATE: November 15, 2014
 --
@@ -33,7 +33,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-//#define CONNECT_ON_START
+#define CONNECT_ON_START
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
@@ -108,36 +108,36 @@ OVERLAPPED ol = { 0 };
 -- to the communications port and initializes protocol variables, as well as
 -- starting the WndProc message loop.
 ----------------------------------------------------------------------------------------------------------------------*/
-int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
- 						  LPSTR lspszCmdParam, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
+	LPSTR lspszCmdParam, int nCmdShow)
 {
-	#ifdef RANDOMIZE_SEED
-		srand(time(NULL));
-	#endif
+#ifdef RANDOMIZE_SEED
+	srand(time(NULL));
+#endif
 
 	BuildCommDCB(TEXT("96,N,8,1"), &dcb);
 
-	#ifdef CONNECT_ON_START
-		if ((hComm = CreateFile(TEXT("COM1"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 
-			FILE_FLAG_OVERLAPPED, NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
-		{
-			MessageBox(NULL, TEXT("Error connecting to modem, exiting..."), TEXT("Error"), MB_OK);
-			PurgeComm(hComm, PURGE_RXCLEAR | PURGE_TXCLEAR);
-			CloseHandle(hComm);
-			hComm = NULL;
-			PostQuitMessage(0);
-		}
+#ifdef CONNECT_ON_START
+	if ((hComm = CreateFile(TEXT("COM1"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+		FILE_FLAG_OVERLAPPED, NULL)) == INVALID_HANDLE_VALUE || !SetCommState(hComm, &dcb))
+	{
+		MessageBox(NULL, TEXT("Error connecting to modem, exiting..."), TEXT("Error"), MB_OK);
+		PurgeComm(hComm, PURGE_RXCLEAR | PURGE_TXCLEAR);
+		CloseHandle(hComm);
+		hComm = NULL;
+		PostQuitMessage(0);
+	}
 
-		ol.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-		hThrd = CreateThread(NULL, 0, startComms, NULL, 0, NULL);
-		if (!hThrd)
-		{
-			MessageBox(NULL, TEXT("Error creating communications thread."), TEXT("Error"), MB_ICONWARNING | MB_OK);
-			CloseHandle(hThrd);
-			hThrd = NULL;
-			PostQuitMessage(0);
-		}
-	#endif
+	ol.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	hThrd = CreateThread(NULL, 0, startComms, NULL, 0, NULL);
+	if (!hThrd)
+	{
+		MessageBox(NULL, TEXT("Error creating communications thread."), TEXT("Error"), MB_ICONWARNING | MB_OK);
+		CloseHandle(hThrd);
+		hThrd = NULL;
+		PostQuitMessage(0);
+	}
+#endif
 
 	// set up crc table
 	crcInit();
@@ -152,35 +152,35 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	MSG Msg;
 
-	Wcl.cbSize = sizeof (WNDCLASSEX);
+	Wcl.cbSize = sizeof(WNDCLASSEX);
 	Wcl.style = CS_HREDRAW | CS_VREDRAW;
 	Wcl.hIcon = LoadIcon(NULL, IDI_APPLICATION); // large icon 
 	Wcl.hIconSm = NULL; // use small version of large icon
 	Wcl.hCursor = LoadCursor(NULL, IDC_ARROW);  // cursor style
-	
+
 	Wcl.lpfnWndProc = WndProc;
 	Wcl.hInstance = hInst;
-	Wcl.hbrBackground = (HBRUSH) GetStockObject(WHITE_BRUSH); //gray background
+	Wcl.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH); //gray background
 	Wcl.lpszClassName = Name;
-	
+
 	Wcl.lpszMenuName = TEXT("MENU"); // The menu Class
 	Wcl.cbClsExtra = 0;      // no extra memory needed
-	Wcl.cbWndExtra = 0; 
-	
-	if (!RegisterClassEx (&Wcl))
+	Wcl.cbWndExtra = 0;
+
+	if (!RegisterClassEx(&Wcl))
 	{
 		return 0;
 	}
 
-	hwnd = CreateWindow (Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
-   							600, 400, NULL, NULL, hInst, NULL);
-	ShowWindow (hwnd, nCmdShow);
-	UpdateWindow (hwnd);
+	hwnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
+		600, 400, NULL, NULL, hInst, NULL);
+	ShowWindow(hwnd, nCmdShow);
+	UpdateWindow(hwnd);
 
-	while (GetMessage (&Msg, NULL, 0, 0))
+	while (GetMessage(&Msg, NULL, 0, 0))
 	{
-   		TranslateMessage (&Msg);
-		DispatchMessage (&Msg);
+		TranslateMessage(&Msg);
+		DispatchMessage(&Msg);
 	}
 
 	return Msg.wParam;
@@ -208,96 +208,96 @@ int WINAPI WinMain (HINSTANCE hInst, HINSTANCE hprevInstance,
 -- NOTES:
 -- This function handles all messages received by the program.
 ----------------------------------------------------------------------------------------------------------------------*/
-LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
-                          WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
+	WPARAM wParam, LPARAM lParam)
 {
 	switch (Message)
 	{
-		case WM_COMMAND:
-			switch (LOWORD (wParam))
-			{
-				case IDM_HELP:
-				{
-					const char* HELP_TEXT = "Irregardless is a communications program designed to "
-						"implement and display the functionality of the Grapefruit "
-						"Protocol for peer - to - peer wired and wireless communication. "
-						"\n\n"
-						"Irregardless contains functionality for transmitting single "
-						"characters and full text files across wired and wireless "
-						"environments, and is capable of tracking protocol statistics "
-						"for debugging and analytical purposes.";
-					MessageBox(hwnd, HELP_TEXT, TEXT("Help"), MB_OK | MB_ICONINFORMATION);
-					break;
-				}
-				case IDM_QUIT:
-					closePort(hComm);
-					PostQuitMessage(0);
-					break;
-				case IDM_SENDTEXTFILE:
-					addTextFile();
-					break;
-				case IDM_EXPORTANALYTICS:
-					saveAnalytics();
-					break;
-				case IDC_SEND_BTN:
-					fillSendBuffer();			
-					break;
-				case IDM_CLEARDATA:
-					clearData();
-					break;
-			}
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+		case IDM_HELP:
+		{
+			const char* HELP_TEXT = "Irregardless is a communications program designed to "
+				"implement and display the functionality of the Grapefruit "
+				"Protocol for peer - to - peer wired and wireless communication. "
+				"\n\n"
+				"Irregardless contains functionality for transmitting single "
+				"characters and full text files across wired and wireless "
+				"environments, and is capable of tracking protocol statistics "
+				"for debugging and analytical purposes.";
+			MessageBox(hwnd, HELP_TEXT, TEXT("Help"), MB_OK | MB_ICONINFORMATION);
 			break;
-			
-		case WM_CHAR:
+		}
+		case IDM_QUIT:
+			closePort(hComm);
+			PostQuitMessage(0);
 			break;
-
-		case WM_PAINT:		// Process a repaint message
-			hdc = BeginPaint (hwnd, &paintstruct); // Acquire DC
-			
-			EndPaint (hwnd, &paintstruct); // Release DC
-
-			// Print analytics
-			updateAnalytics();
-
-			// Print received data
-			displayReceived();
-
+		case IDM_SENDTEXTFILE:
+			addTextFile();
 			break;
-
-		case WM_SIZE:
-			updateWrapLength();
-			refreshScreen();
+		case IDM_EXPORTANALYTICS:
+			saveAnalytics();
 			break;
-
-		case WM_CREATE:
-			hWndButton = CreateWindowEx(NULL,
-				"BUTTON",
-				"Send",
-				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-				470, 317, 114, 25, hwnd, (HMENU)IDC_SEND_BTN,
-				GetModuleHandle(NULL),NULL);
-
-			hEdit = CreateWindowEx(WS_EX_CLIENTEDGE,
-				"EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
-				0, 317, 470, 25, hwnd, (HMENU)IDC_EDIT_TXT,
-				GetModuleHandle(NULL), NULL);
-
-			SendMessage(hEdit, EM_SETLIMITTEXT, 1024, '\0');
-
-			DefEditProc = (WNDPROC)GetWindowLong(hEdit, GWL_WNDPROC);
-			SetWindowLong(hEdit, GWL_WNDPROC, (long)EditTxtProc);
-			SetFocus(hEdit);
+		case IDC_SEND_BTN:
+			fillSendBuffer();
 			break;
-
-		case WM_DESTROY:
-			#ifdef CONNECT_ON_START
-				closePort(hComm);
-			#endif
-      		PostQuitMessage(0);
+		case IDM_CLEARDATA:
+			clearData();
 			break;
+		}
+		break;
 
-		default:
-			return DefWindowProc (hwnd, Message, wParam, lParam);
+	case WM_CHAR:
+		break;
+
+	case WM_PAINT:		// Process a repaint message
+		hdc = BeginPaint(hwnd, &paintstruct); // Acquire DC
+
+		EndPaint(hwnd, &paintstruct); // Release DC
+
+		// Print analytics
+		updateAnalytics();
+
+		// Print received data
+		displayReceived();
+
+		break;
+
+	case WM_SIZE:
+		updateWrapLength();
+		refreshScreen();
+		break;
+
+	case WM_CREATE:
+		hWndButton = CreateWindowEx(NULL,
+			"BUTTON",
+			"Send",
+			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+			470, 317, 114, 25, hwnd, (HMENU)IDC_SEND_BTN,
+			GetModuleHandle(NULL), NULL);
+
+		hEdit = CreateWindowEx(WS_EX_CLIENTEDGE,
+			"EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL,
+			0, 317, 470, 25, hwnd, (HMENU)IDC_EDIT_TXT,
+			GetModuleHandle(NULL), NULL);
+
+		SendMessage(hEdit, EM_SETLIMITTEXT, 1024, '\0');
+
+		DefEditProc = (WNDPROC)GetWindowLong(hEdit, GWL_WNDPROC);
+		SetWindowLong(hEdit, GWL_WNDPROC, (long)EditTxtProc);
+		SetFocus(hEdit);
+		break;
+
+	case WM_DESTROY:
+#ifdef CONNECT_ON_START
+		closePort(hComm);
+#endif
+		PostQuitMessage(0);
+		break;
+
+	default:
+		return DefWindowProc(hwnd, Message, wParam, lParam);
 	}
 
 	return 0;
@@ -314,8 +314,8 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 --
 -- PROGRAMMER: Lewis Scott
 --
--- INTERFACE: LRESULT CALLBACK EditTxtProc(HWND hDlg, 
---				UINT message, WPARAM wParam, LPARAM lParam) 
+-- INTERFACE: LRESULT CALLBACK EditTxtProc(HWND hDlg,
+--				UINT message, WPARAM wParam, LPARAM lParam)
 --
 -- RETURNS: LRESULT
 --
@@ -324,37 +324,37 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 -- If the user hits the enter key while the edit control is in focus,
 -- it calls fillSendBuffer.
 ----------------------------------------------------------------------------------------------------------------------*/
-LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
+LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	switch (message) 
+	switch (message)
 	{
-		case WM_CHAR:
-			if (wParam == VK_RETURN) 
+	case WM_CHAR:
+		if (wParam == VK_RETURN)
+		{
+			fillSendBuffer();
+			return(0);
+		}
+		else if (wParam == VK_ESCAPE)
+		{
+			int ndx = 0;
+			for (int i = 0; i < 10; i++)
 			{
-				fillSendBuffer();
-				return(0);
-			}
-			else if (wParam == VK_ESCAPE)
-			{
-				int ndx = 0;
-				for (int i = 0; i < 10; i++)
+				for (int j = 0; j < 4; j++)
 				{
-					for (int j = 0; j < 4; j++)
-					{
-						printText[ndx] = 'A';
-						ndx++;
-					}
-					printText[ndx] = ' ';
+					printText[ndx] = 'A';
 					ndx++;
 				}
-
-				displayReceived();
+				printText[ndx] = ' ';
+				ndx++;
 			}
-			else return((LRESULT)CallWindowProc((WNDPROC)DefEditProc, hDlg, message, wParam, lParam));
-			break;
-		default:
-			return((LRESULT)CallWindowProc((WNDPROC)DefEditProc, hDlg, message, wParam, lParam));
-			break;
+
+			displayReceived();
+		}
+		else return((LRESULT)CallWindowProc((WNDPROC)DefEditProc, hDlg, message, wParam, lParam));
+		break;
+	default:
+		return((LRESULT)CallWindowProc((WNDPROC)DefEditProc, hDlg, message, wParam, lParam));
+		break;
 	}
 	return(0);
 }
@@ -413,7 +413,7 @@ void addTextFile()
 		do
 		{
 			str.clear();
-		
+
 			// Read in a line from the file
 			getline(f, str);
 
@@ -560,13 +560,13 @@ void drawAnalytics()
 		analyticsSection.clear();
 		getline(analytics, analyticsSection);
 		TextOut(hdc, analyticsDivider, y, analyticsSection.c_str(), analyticsSection.size());
-		
+
 		y += 16;
 
 	} while (analyticsSection.size() > 0);
 
 	// Release DC
-	ReleaseDC(hwnd, hdc); 
+	ReleaseDC(hwnd, hdc);
 }
 
 
@@ -744,10 +744,10 @@ void displayReceived()
 	int width = analyticsDivider / 9;
 
 	hdc = GetDC(hwnd);
-	if( strlen(printText) != 0 )
+	if (strlen(printText) != 0)
 		addToTotalMessage();
 
-	for(size_t i = 0; i < totalMessage.size(); i++)
+	for (size_t i = 0; i < totalMessage.size(); i++)
 	{
 		TextOut(hdc, 0, i * 16, totalMessage[i].c_str(), totalMessage[i].size());
 	}
@@ -787,16 +787,16 @@ void updateWrapLength()
 
 	//MoveWindow(hEdit, 0, 0, 30, 30, 1);
 	MoveWindow(hEdit, 0, rect.top + (rect.bottom - rect.top) - 25, editTextWidth, editTextHeight, 1);
-		ShowWindow(hEdit, SW_SHOWNORMAL);
+	ShowWindow(hEdit, SW_SHOWNORMAL);
 	MoveWindow(hWndButton, editTextWidth, rect.top + (rect.bottom - rect.top) - 25, editButtonWidth, editTextHeight, 1);
-		ShowWindow(hWndButton, SW_SHOWNORMAL);
+	ShowWindow(hWndButton, SW_SHOWNORMAL);
 
-		// Update the divider position
+	// Update the divider position
 	analyticsDivider = rect.right - rect.left - ANALYTICS_WIDTH;
 
 	// Make a copy of the vector
 	string message;
-	
+
 	// Print the totalMessage pieces into one long string
 	for (vector<string>::iterator it = totalMessage.begin(); it != totalMessage.end(); it++)
 	{
@@ -863,26 +863,26 @@ void addToTotalMessage()
 	//totalMessage.push_back("this is no2");
 	//totalMessage.push_back("this is no3");
 
-	int width = analyticsDivider/9;
+	int width = analyticsDivider / 9;
 
-	while( message.length() > width)
+	while (message.length() > width)
 	{
 		string temp = message.substr(0, width);
 		int spaceLoc;
-		if( ( spaceLoc = temp.rfind(' ') ) != string::npos )
+		if ((spaceLoc = temp.rfind(' ')) != string::npos)
 		{
-			totalMessage.push_back( temp.substr(0, spaceLoc) );
+			totalMessage.push_back(temp.substr(0, spaceLoc));
 			// erase message and space
 			message = message.erase(0, spaceLoc + 1);
 		}
 		else
 		{
-			totalMessage.push_back( temp );
-			message = message.erase(0, width );
+			totalMessage.push_back(temp);
+			message = message.erase(0, width);
 		}
 	}
 
-	if( message.length() != 0 )
+	if (message.length() != 0)
 	{
 		totalMessage.push_back(message);
 	}

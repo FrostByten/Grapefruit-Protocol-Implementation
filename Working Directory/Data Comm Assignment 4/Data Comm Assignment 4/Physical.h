@@ -3,7 +3,6 @@
 
 #include "DataLink.h"
 
-#define PACKET_SIZE 1024
 #define SYSTEM_ERROR 3
 #define INVALID_PACKET 2
 #define TIMEOUT_PACKET 1
@@ -24,7 +23,6 @@ char receiveGenControlChar(double waitTimeout);
 void waitForEnqResponse();
 void waitForAckResponse();
 void sendData();
-BOOL getTransmitting();
 
 
 #endif

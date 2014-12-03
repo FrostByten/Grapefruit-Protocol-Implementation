@@ -19,6 +19,8 @@ using std::ifstream;
 const int ANALYTICS_WIDTH = 220;
 const int SEND_BUF_SIZE = 10240;
 
+#define PACKET_SIZE 1024
+
 #define EOT 0x04
 #define ETB 0x17
 #define ETX 0x03
