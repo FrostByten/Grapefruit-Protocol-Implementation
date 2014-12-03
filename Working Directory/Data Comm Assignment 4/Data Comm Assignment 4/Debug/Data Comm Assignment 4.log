@@ -1,3 +1,16 @@
 ﻿Project file contains ToolsVersion="12.0". This toolset is unknown or missing. You may be able to resolve this by installing the appropriate .NET Framework for this toolset. Treating the project as if it had ToolsVersion="4.0".
+  Session.cpp
+  Physical.cpp
+d:\bcit_term_3\option\grapes\grapefruit-protocol-implementation\working directory\data comm assignment 4\data comm assignment 4\physical.cpp(89): warning C4244: 'argument' : conversion from 'double' to 'DWORD', possible loss of data
+d:\bcit_term_3\option\grapes\grapefruit-protocol-implementation\working directory\data comm assignment 4\data comm assignment 4\physical.cpp(339): warning C4101: 'dwMaskEvent' : unreferenced local variable
+d:\bcit_term_3\option\grapes\grapefruit-protocol-implementation\working directory\data comm assignment 4\data comm assignment 4\physical.cpp(467): warning C4101: 'dwMaskEvent' : unreferenced local variable
+d:\bcit_term_3\option\grapes\grapefruit-protocol-implementation\working directory\data comm assignment 4\data comm assignment 4\physical.cpp(556): warning C4101: 'dwMaskEvent' : unreferenced local variable
+d:\bcit_term_3\option\grapes\grapefruit-protocol-implementation\working directory\data comm assignment 4\data comm assignment 4\physical.cpp(626): warning C4101: 'dwMaskEvent' : unreferenced local variable
+  DataLink.cpp
   Application.cpp
+  Generating Code...
+  Compiling...
+  Statistics.cpp
+  Generating Code...
+  LINK : D:\BCIT_TERM_3\Option\Grapes\Grapefruit-Protocol-Implementation\Working Directory\Data Comm Assignment 4\Debug\Data Comm Assignment 4.exe not found or not built by the last incremental link; performing full link
   Data Comm Assignment 4.vcxproj -> D:\BCIT_TERM_3\Option\Grapes\Grapefruit-Protocol-Implementation\Working Directory\Data Comm Assignment 4\Debug\Data Comm Assignment 4.exe
