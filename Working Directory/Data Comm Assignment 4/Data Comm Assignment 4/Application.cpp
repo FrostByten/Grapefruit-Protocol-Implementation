@@ -506,6 +506,8 @@ void updateAnalytics()
 	analytics << "NAK Sent: " << stats->getNAKSent() << "\n";
 	analytics << "ENQ Received: " << stats->getENQReceived() << "\n";
 	analytics << "ENQ Sent: " << stats->getENQSent() << "\n";
+	analytics << "Good Packet Received: " << stats->getGoodPacketReceived() << "\n";
+	analytics << "Good Packet Sent: " << stats->getGoodPacketSent() << "\n";
 	analytics << "Bad Packet Received: " << stats->getBadPacketReceived() << "\n";
 	analytics << "Bad Packet Sent: " << stats->getBadPacketSent() << "\n";
 	analytics << "Lost Packet Sent: " << stats->getLostPacketSent() << "\n";

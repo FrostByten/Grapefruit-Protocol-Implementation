@@ -21,7 +21,7 @@
 #include "DataLink.h"
 
 /*------------------------------------------------------------------------------------------------------------------
--- FUNCTION: construcPacket
+-- FUNCTION: constructPacket
 --
 -- DATE: November 14, 2014
 --
@@ -45,13 +45,13 @@ DWORD constructPacket( unsigned char* packet, BOOL maxSent )
 	DWORD totalData = getBufferSize();
 	DWORD dataSent = 0;
 	//should check this at a higher level, so they know		
+	packet[1] = syncSend;
 	if( totalData > MAX_DATA )
 	{
 		if (maxSent)
 			packet[0] = EOT;
 		else
 			packet[0] = ETB;
-		packet[1] = syncSend;
 		
 		for( size_t i = 0; i < MAX_DATA; i++ )
 		{
@@ -62,11 +62,10 @@ DWORD constructPacket( unsigned char* packet, BOOL maxSent )
 	else
 	{
 		packet[0] = EOT;
-		packet[1] = syncSend;
 		size_t i = 0;
 		for(; i < totalData; i++ )
 		{
-			packet[i + 2] = sendBuffer[i];
+			packet[i + 2] = (unsigned char)sendBuffer[i];
 		}
 		for(; i < MAX_DATA; i++)
 		{
@@ -78,7 +77,7 @@ DWORD constructPacket( unsigned char* packet, BOOL maxSent )
 	syncSend = ( syncSend == SYN1 ) ? SYN2 : SYN1;
 	setCRC( packet );
 	
-	return totalData;
+	return dataSent;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -121,6 +120,11 @@ void setCRC( unsigned char* packet )
 	
 	unsigned char* crcArray = new unsigned char[4];
 	crcArray = reinterpret_cast<unsigned char *>(&c);	
+
+	OutputDebugString("Computing CRC: ");
+	stringstream sn;
+	ss << crcArray;
+	OutputDebugString(sn.str().c_str());
 
 	for(size_t i = 0; i < 4; i++)
 	{
@@ -202,15 +206,6 @@ bool validatePacket( unsigned char* response )
 	yy[f] = '\0';
 	printDebugString(yy); */
 
-	if (response[0] == EOT)
-		printDebugString("Found EOT");
-	else if (response[0] == ETB)
-		printDebugString("Found ETB");
-	else if (response[0] == SYN1 || response[0] == SYN2 )
-		printDebugString("Found SYN");
-	else
-		printDebugString((char*)response);
-
 	if (response[1] != syncRx)
 		return false;
 	crc* c = reinterpret_cast<crc *>( &response[ MAX_DATA + 2 ] );
@@ -218,16 +213,16 @@ bool validatePacket( unsigned char* response )
 	stringstream ss;
 	ss << "CRC received " << *c << "  CRC calculated " << crcFast(&response[2], MAX_DATA);
 
-	string sx = ss.str();
+	/*string sx = ss.str();
 	char* xx = new char[2048];
 	int i;
 	for (i = 0; i < sx.size(); i++)
 	{
 		xx[i] = sx[i];
 	}
-	xx[i] = '\0';
+	xx[i] = '\0';*/
 
-	printDebugString(xx);
+	//printDebugString((char*)ss.str().c_str());
 	
 	return *c == crcFast( &response[2], MAX_DATA );
 }

@@ -19,6 +19,7 @@
 ----------------------------------------------------------------------------------------------------------------------*/
 
 #include "Physical.h"
+#include <iomanip>
 
 bool sending = false;
 bool receiving = false;
@@ -70,7 +71,6 @@ DWORD WINAPI startComms(LPVOID data)
 				sendControlChar(ENQ);
 				stats->incENQSent();
 				waitForEnqResponse();
-				//while(1);
 			}
 
 			sending = false;
@@ -117,7 +117,7 @@ DWORD WINAPI startRx(LPVOID data)
 				stats->incENQReceived();
 				sendControlChar(ACK);
 				stats->incACKSent();
-				//waitForAckResponse();
+				waitForAckResponse();
 			}
 			receiving = false;
 		}
@@ -180,13 +180,29 @@ void waitForAckResponse()
 
 	while(receiving)
 	{
-		if(!receivePacket(pack))
-			receiving = false;
-		else
+		DWORD rec = receivePacket(pack);
+		switch (rec)
 		{
-			stats->incGoodPacketReceived();
-			pushPacketToDisplayBuffer(pack);
-			syncRx = syncRx == SYN1 ? SYN2 : SYN1;
+			case SUCCESSFUL_PACKET:
+				sendControlChar(ACK);
+				stats->incGoodPacketReceived();
+				stats->incACKSent();
+				pushPacketToDisplayBuffer(pack);
+				syncRx = syncRx == SYN1 ? SYN2 : SYN1;
+				if (pack[0] == EOT)
+					receiving = false;
+				break;
+			case INVALID_PACKET:
+				stats->incBadPacketReceived();
+				sendControlChar(NAK);
+				break;
+			case TIMEOUT_PACKET:
+				stats->incLostPacketReceived();
+				receiving = false;
+				break;
+			default:
+				exit(0);
+				break;
 		}
 	}
 }
@@ -225,9 +241,7 @@ void sendData()
 			maxSent = FALSE;
 		int dataSize = constructPacket(packet, maxSent);
 		sendPacket(packet);
-																				//printDebugString((char*)packet);
-		char response = '\0';
-		response = receiveGenControlChar(timeouts.timeoutSendPacket);
+		char response = receiveGenControlChar(timeouts.timeoutSendPacket);
 		if(response == ACK)
 		{
 			stats->incACKReceived();
@@ -269,7 +283,14 @@ void sendData()
 ----------------------------------------------------------------------------------------------------------------------*/
 BOOL sendPacket(unsigned char* packet)
 {
-	return (WriteFile(hComm, &packet, PACKET_SIZE, NULL, &ol));
+	DWORD blank;
+
+	if (!WriteFile(hComm, packet, PACKET_SIZE, NULL, &ol))
+	{
+		GetOverlappedResult(hComm, &ol, &blank, TRUE);
+	}
+
+	return TRUE;
 }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -299,6 +320,7 @@ DWORD receivePacket(unsigned char* packet)
 	int totRead = 0;
 	DWORD read = 0;
 	DWORD dwCommEvent;
+	DWORD dwMaskEvent;
 	DWORD blank;
 	SYSTEMTIME start;
 	SYSTEMTIME now;
@@ -306,8 +328,7 @@ DWORD receivePacket(unsigned char* packet)
 	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
 	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)timeouts.timeoutSendAck;
 
-	GetSystemTime(&start);
-	GetSystemTime(&now);
+	
 
 	if (!SetCommMask(hComm, EV_RXCHAR))
 	{
@@ -326,107 +347,49 @@ DWORD receivePacket(unsigned char* packet)
 	PurgeComm(hComm, PURGE_TXABORT);
 	PurgeComm(hComm, PURGE_RXABORT);
 
-	while(totRead != PACKET_SIZE/* && now.wMilliseconds-start.wMilliseconds < timeouts.timeoutSendAck*/)
+	GetSystemTime(&start);
+	GetSystemTime(&now);
+
+	while (totRead < PACKET_SIZE)
 	{
-		if(!WaitCommEvent(hComm, &dwCommEvent, &ol))
+
+		if (!WaitCommEvent(hComm, &dwCommEvent, &ol))
 		{
 			DWORD err = GetLastError();
- 			if (err == 0x3e5)
+			if (err == 0x3e5)
 			{
 				GetOverlappedResult(hComm, &ol, &blank, TRUE);
 			}
 			else
 			{
-				printDebugString("Timeout packet");
 				return TIMEOUT_PACKET;
 			}
 		}
-
-		if(!ReadFile(hComm, packet + totRead, PACKET_SIZE, &read, &ol))
+		if (dwCommEvent != EV_RXCHAR)
+			return SYSTEM_ERROR;
+		if (!ReadFile(hComm, packet + totRead, 1024, &read, &ol))
 		{
-				GetOverlappedResult(hComm, &ol, &read, TRUE);
+			GetOverlappedResult(hComm, &ol, &read, TRUE);
 		}
 		totRead += read;
+
 		GetSystemTime(&now);
+		/*if (now.wMilliseconds - start.wMilliseconds < timeouts.timeoutSendAck)
+		{
+			return TIMEOUT_PACKET;
+		}*/
 	}
-	
-/*	if(now.wMilliseconds-start.wMilliseconds < timeouts.timeoutSendAck)
-	{
-		printDebugString("Timeout packet2");
-		return TIMEOUT_PACKET;
-	} */
+
 	if (validatePacket(packet))
 	{
-		printDebugString("Successful Packet");
+		//printDebugString("Successful Packet");
 		return SUCCESSFUL_PACKET;
 	} 
 	else
 	{
-		printDebugString("invalid Packet");
 		return INVALID_PACKET;
 	}
-
 }
-/*DWORD receivePacket(unsigned char* packet)
-{
-	BOOL readRet;
-	HANDLE hData = packet;
-	DWORD ret = SUCCESSFUL_PACKET;
-	DWORD sizeRead = 0;
-	DWORD lastRead = 0;
-	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
-	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
-	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)timeouts.timeoutSendAck;
-
-	if (!SetCommMask(hComm, EV_RXCHAR))
-	{
-		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
-		return SYSTEM_ERROR;
-	}
-
-	if (!SetCommTimeouts(hComm, lpCommTimeouts))
-	{
-		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
-		return SYSTEM_ERROR;
-	}
-
-	readRet = ReadFile(hComm, packet, PACKET_SIZE, &lastRead, &ol);
-		
-	if (GetLastError() != ERROR_IO_PENDING)
-	{
-		ret = SYSTEM_ERROR;
-	}
-	if (lastRead != PACKET_SIZE) {
-		ret = SYSTEM_ERROR;
-	}
-	if (!GetCommTimeouts(hComm, lpCommTimeouts))
-	{
-		ret = SYSTEM_ERROR;
-		printf("GetCommTimeouts error: %d\n", GetLastError());
-	}
-
-	if (ret != SUCCESSFUL_PACKET)
-			return ret;
-
-	if (readRet)
-	{
-		ret = SUCCESSFUL_PACKET;
-		if (validatePacket(packet))
-		{
-			return SUCCESSFUL_PACKET;
-		} 
-		else
-		{
-			return INVALID_PACKET;
-		}
-	} else
-	{
-		ret = SYSTEM_ERROR;
-		printf("Wait error: %d\n", GetLastError()); 
-	}
-	return ret;
-}*/
-
 
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: sendControlChar
@@ -449,7 +412,7 @@ DWORD receivePacket(unsigned char* packet)
 BOOL sendControlChar(char cChar)
 {
 	DWORD temp;
-	//return (WriteFile(hComm, &cChar, 1, NULL, &ol));
+
 	if(!WriteFile(hComm, &cChar, 1, &temp, &ol))
 	{
 		DWORD err = GetLastError();
@@ -486,6 +449,7 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 	BOOL readRet = FALSE;
 	char temp = 'X';
 	DWORD dwCommEvent;
+	DWORD dwMaskEvent;
 	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
 	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
 	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)waitTimeout;
@@ -521,7 +485,8 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
  		if (err == ERROR_IO_PENDING)
 		{
 			GetOverlappedResult(hComm, &ol, &numRead, TRUE);
-
+			if (dwCommEvent != EV_RXCHAR)
+				return FALSE;
 			if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
 			{
 				GetOverlappedResult(hComm, &ol, &numRead, TRUE);
@@ -566,20 +531,22 @@ BOOL receiveENQ()
 {
 	DWORD numRead;
 	DWORD dwCommEvent;
+	DWORD dwMaskEvent;
 	BOOL ret = FALSE;
 	char temp;
 	LPVOID receiveChar = &temp;
 
-	// Set the comm mask to receiving a char
+
 	if (!SetCommMask(hComm, EV_RXCHAR))
 	{
 		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
-		return SYSTEM_ERROR;
 	}
 	
 	// Wait for a char to appear
 	if (WaitCommEvent(hComm, &dwCommEvent, &ol))
 	{
+		if (dwCommEvent != EV_RXCHAR)
+			return FALSE;
 		// Read a char from the file and check if it's ENQ
 		if (!ReadFile(hComm, &temp, 1, &numRead, &ol))
 		{
@@ -634,8 +601,8 @@ char receiveGenControlChar(double waitTimeout)
 {
 	DWORD numRead;
 	DWORD dwCommEvent;
-	char temp = ' ';
-	HANDLE receiveChar = &temp;
+	DWORD dwMaskEvent;
+	char receivechar[2] = { '\0', '\0' };
 	LPCOMMTIMEOUTS lpCommTimeouts = new COMMTIMEOUTS();
 	lpCommTimeouts->ReadTotalTimeoutMultiplier = 0;
 	lpCommTimeouts->ReadTotalTimeoutConstant = (DWORD)waitTimeout;
@@ -659,15 +626,16 @@ char receiveGenControlChar(double waitTimeout)
 		}
 		else
 		{
-			printDebugString("timed out");
+			OutputDebugString("timed out receiving general control char");
 			return '\0';
 		}
 	}
-
-	if(!ReadFile(hComm, receiveChar, sizeof(char), &numRead, &ol))
+	if (dwCommEvent != EV_RXCHAR)
+		return NULL;
+	if(!ReadFile(hComm, receivechar, sizeof(char), &numRead, &ol))
 	{
 		GetOverlappedResult(hComm, &ol, &numRead, TRUE);
 	}
 
-	return (char)receiveChar;
+	return receivechar[0];
 }
