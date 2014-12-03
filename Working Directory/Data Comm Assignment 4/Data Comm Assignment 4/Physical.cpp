@@ -159,8 +159,9 @@ void waitForEnqResponse()
 	{
 		stats->incACKReceived();
 		sendData();
+		return;
 	}
-		
+
 	sending = false;
 	waitForReset = true;
 }
@@ -388,7 +389,7 @@ DWORD receivePacket(unsigned char* packet)
 		totRead += read;
 
 		GetSystemTime(&now);
-		if ((now.wMilliseconds - start.wMilliseconds) > timeouts.timeoutSendAck)
+		if (((now.wMilliseconds - start.wMilliseconds) + (now.wSecond - start.wSecond) * 1000)> timeouts.timeoutSendAck)
 		{
 			OutputDebugString("mil - mil\n");
 			return TIMEOUT_PACKET;
@@ -397,7 +398,6 @@ DWORD receivePacket(unsigned char* packet)
 
 	if (validatePacket(packet))
 	{
-		//printDebugString("Successful Packet");
 		return SUCCESSFUL_PACKET;
 	} 
 	else
@@ -511,22 +511,17 @@ BOOL receiveControlChar(char cChar, double waitTimeout)
 	}
 
 	GetSystemTime(&now);
-	if ((now.wMilliseconds - start.wMilliseconds) > timeouts.timeoutSendAck)
+	if (((now.wMilliseconds - start.wMilliseconds) + (now.wSecond - start.wSecond) * 1000)> timeouts.timeoutSendAck)
 	{
 		return TIMEOUT_PACKET;
 	}
 
-	//char in[2] = {temp, '\0'};
-	//printDebugString(in);
-
 	if(temp == cChar)
 	{
-		//printDebugString("got it");
 		return TRUE;
 	}
 	else
 	{
-		//printDebugString("nope");
 		return FALSE;
 	}
 }
@@ -636,10 +631,6 @@ char receiveGenControlChar(double waitTimeout)
 		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
 	}
 
-	/*if (!SetCommTimeouts(hComm, lpCommTimeouts))
-	{
-		MessageBox(NULL, "Error setting comm timeouts:", "", MB_OK);
-	}*/
 	GetSystemTime(&start);
 	if (!WaitCommEvent(hComm, &dwCommEvent, &ol))
 	{	
@@ -656,16 +647,53 @@ char receiveGenControlChar(double waitTimeout)
 	}
 	if (dwCommEvent != EV_RXCHAR)
 		return NULL;
-	if(!ReadFile(hComm, receivechar, sizeof(char), &numRead, &ol))
+		
+	
+	if (!ReadFile(hComm, receivechar, sizeof(char), &numRead, &ol))
 	{
 		GetOverlappedResult(hComm, &ol, &numRead, TRUE);
 	}
 
 	GetSystemTime(&now);
-	if ((now.wMilliseconds - start.wMilliseconds) > timeouts.timeoutSendAck)
+	if (((now.wMilliseconds - start.wMilliseconds) + (now.wSecond - start.wSecond) * 1000)> timeouts.timeoutSendAck)
 	{
-		return TIMEOUT_PACKET;
+		return NULL;
 	}
 
 	return receivechar[0];
 }
+
+/*BOOL receiveAfterENQ(double waitTimeout)
+{
+	DWORD numRead;
+	DWORD dwCommEvent;
+	DWORD dwMaskEvent;
+	char receivechar[2] = { '\0', '\0' };
+	SYSTEMTIME start;
+	SYSTEMTIME now;
+
+	if (!SetCommMask(hComm, EV_RXCHAR))
+	{
+		MessageBox(NULL, "Error setting comm mask:", "", MB_OK);
+	}
+	OutputDebugString("Starting to look for ACK");
+	GetSystemTime(&start);
+	while (!WaitCommEvent(hComm, &dwCommEvent, &ol))
+	{
+		GetSystemTime(&now);
+		if (((now.wMilliseconds - start.wMilliseconds) + (now.wSecond - start.wSecond) * 1000) > timeouts.timeoutSendAck)
+		{
+			return FALSE;
+		}
+	}
+	OutputDebugString("Done looking");
+	if (!ReadFile(hComm, receivechar, sizeof(char), &numRead, &ol))
+	{
+		return FALSE;
+	}
+	OutputDebugString("Read successful");
+	if (receivechar[0] == ACK)
+		return TRUE;
+	else
+		return FALSE;
+}*/

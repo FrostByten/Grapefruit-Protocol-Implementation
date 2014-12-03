@@ -23,6 +23,6 @@ char receiveGenControlChar(double waitTimeout);
 void waitForEnqResponse();
 void waitForAckResponse();
 void sendData();
-
+//BOOL receiveAfterENQ(double waitTimeout);
 
 #endif
