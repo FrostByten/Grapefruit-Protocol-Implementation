@@ -43,6 +43,7 @@ void updateWrapLength();
 void addToTotalMessage();
 void displayReceived();
 void clearData();
+void updateTotalMessages();
 
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
