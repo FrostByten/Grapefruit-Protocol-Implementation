@@ -33,7 +33,7 @@
 #define STRICT
 #define _CRT_SECURE_NO_WARNINGS
 
-#define CONNECT_ON_START
+//#define CONNECT_ON_START
 #define RANDOMIZE_SEED
 
 #pragma warning (disable: 4096)
@@ -235,6 +235,9 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT Message,
 				case IDC_SEND_BTN:
 					fillSendBuffer();			
 					break;
+				case IDM_CLEARDATA:
+					clearData();
+					break;
 			}
 			break;
 			
@@ -433,7 +436,7 @@ void addTextFile()
 					}
 				}
 			}
-		} while (str.length() > 0);
+		} while (!f.eof());
 
 		printDebugString(sendBuffer);
 
@@ -864,4 +867,31 @@ void addToTotalMessage()
 		totalMessage.push_back(message);
 	}
 	printText[0] = '\0';
+}
+
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: clearData
+--
+-- DATE: Dec 2, 2014
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Chris Klassen
+--
+-- PROGRAMMER: Chris Klassen
+--
+-- INTERFACE: void clearData();
+--
+-- RETURNS: void
+--
+-- NOTES:
+--		Clears the received data and refreshes the screen.
+----------------------------------------------------------------------------------------------------------------------*/
+void clearData()
+{
+	totalMessage.clear();
+	refreshScreen();
+
+	return;
 }

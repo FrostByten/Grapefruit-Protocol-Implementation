@@ -40,6 +40,7 @@ void addTextFile();
 void updateWrapLength();
 void addToTotalMessage();
 void displayReceived();
+void clearData();
 
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK EditTxtProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
